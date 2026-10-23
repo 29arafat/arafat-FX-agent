@@ -7,7 +7,7 @@ import requests
 
 from src import fetch
 from src.fetch import (FetchError, Throttle, aggregate, check_alignment, drop_running,
-                       drop_flat, due_timeframes, fetch_all, fetch_candles, fetch_h1, fetch_pair,
+                       drop_flat, drop_weekend, weekend_mask, due_timeframes, fetch_all, fetch_candles, fetch_h1, fetch_pair,
                        parse_response)
 
 KEY = "SECRETKEY123"
@@ -253,6 +253,27 @@ def test_drop_flat_removes_weekend_fill_and_restores_gaps():
     assert len(aggregate(filled, 24, 20, 3)) > len(d_orig)
 
 
+def test_weekend_window_boundaries():
+    idx = pd.DatetimeIndex([ts("2026-10-16 21:00"), ts("2026-10-16 22:00"), ts("2026-10-17 12:00"),
+                            ts("2026-10-18 21:00"), ts("2026-10-18 22:00")])
+    got = list(weekend_mask(idx))
+    assert got == [False, True, True, True, False]   # শুক্র ২১:০০ থাকে, রবি ২২:০০ থেকে আবার ধরা
+
+
+def test_drop_weekend_removes_non_flat_weekend_noise():
+    h1 = week_h1()
+    rows = []
+    t = ts("2026-10-16 22:00")
+    while t < ts("2026-10-18 23:00"):                      # শুক্র ২২:০০ – রবি ২২:০০ (সামান্য নড়াচড়াসহ)
+        rows.append({"datetime": t, "open": 50.0, "high": 50.4, "low": 49.9, "close": 50.1})
+        t += timedelta(hours=1)
+    noisy = pd.concat([h1, pd.DataFrame(rows).set_index("datetime")]).sort_index()
+    assert len(noisy) > len(h1)
+    assert not drop_flat(noisy).equals(h1)                 # শুধু ফাঁকা-ফিল্টারে যথেষ্ট নয়
+    cleaned = drop_weekend(noisy)
+    assert len(cleaned) == len(h1) + 1 and ts("2026-10-18 22:00") in cleaned.index   # রবি ২২:০০ থেকে আবার ধরা
+
+
 def test_fetch_pair_drops_flat_candles():
     base = server()
 
@@ -301,7 +322,8 @@ def server(fail_symbols=()):
 
 
 CFG = {
-    "data": {"timezone": "UTC", "h1_bars": 3500, "d1_h1_bars": 9000, "d1_day_start_hour": 20, "drop_flat_candles": True,
+    "data": {"timezone": "UTC", "h1_bars": 3500, "d1_h1_bars": 9000, "d1_day_start_hour": 20, "drop_flat_candles": True, "drop_weekend_candles": True,
+             "weekend": {"close": {"weekday": 4, "hour": 22}, "open": {"weekday": 6, "hour": 22}},
              "d1_min_h1_bars": 3, "retries": 1, "request_timeout_seconds": 5,
              "min_bars": {"H1": 250, "H4": 250, "D1": 250}},
     "api_limits": {"sleep_between_requests_seconds": 0},
@@ -326,7 +348,8 @@ def test_deep_fetch_paginates_and_builds_h4_d1():
     assert s.calls[0][1]["outputsize"] == 5000 and s.calls[1][1]["outputsize"] == 4000
     assert "end_date" in s.calls[1][1] and "end_date" not in s.calls[0][1]
     x = data["XAUUSD"]
-    assert len(x["H1"]) >= 8990   # ডুপ্লিকেট ও চলমান বাদে ~৯০০০
+    assert 6000 < len(x["H1"]) < 7000            # ৯০০০ থেকে সপ্তাহান্ত (২/৭) বাদ
+    assert not weekend_mask(x["H1"].index).any()
     assert x["H1"].index.is_unique and x["H1"].index.is_monotonic_increasing
     assert x["H4"].index[-1] == ts("2026-10-23 00:00")
     assert x["D1"].index[-1] == ts("2026-10-22 20:00") - timedelta(days=1)  # ২২ ২০:০০-এর দিন চলমান

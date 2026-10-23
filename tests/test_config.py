@@ -48,5 +48,6 @@ def test_data_quality_settings():
     # সপ্তাহান্ত বাদে ৫/৭ ঘণ্টা থাকে; D1: দিনে ১টা, H4: দিনে ~৬টা
     assert d["d1_h1_bars"] / 24 * 5 / 7 >= d["min_bars"]["D1"] + 10
     assert d["h1_bars"] / 24 * 5 / 7 * 6 >= d["min_bars"]["H4"] + 200   # EMA200 + ওয়ার্মআপ
-    assert d["drop_flat_candles"] is True
+    assert d["drop_flat_candles"] is True and d["drop_weekend_candles"] is True
+    assert d["weekend"]["close"]["weekday"] < d["weekend"]["open"]["weekday"]
     assert d["d1_h1_bars"] <= 10000 and "h4_bars" not in d

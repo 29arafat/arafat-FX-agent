@@ -128,6 +128,23 @@ def drop_flat(df: pd.DataFrame) -> pd.DataFrame:
     return df[(df["high"] - df["low"]) > 0]
 
 
+def weekend_mask(index: pd.DatetimeIndex, close_wd: int = 4, close_hour: int = 22,
+                 open_wd: int = 6, open_hour: int = 22) -> "pd.Series":
+    """সপ্তাহান্ত বাজার-বন্ধ জানালার ভেতরের ক্যান্ডেল (UTC): [শুক্র close_hour, রবি open_hour)।
+    সপ্তাহ সোমবার (০) থেকে শুরু; শুরুর সময় ধরে মেলানো হয়।"""
+    m = index.dayofweek * 1440 + index.hour * 60 + index.minute
+    lo = close_wd * 1440 + close_hour * 60
+    hi = open_wd * 1440 + open_hour * 60
+    return pd.Series((m >= lo) & (m < hi), index=index)
+
+
+def drop_weekend(df: pd.DataFrame, close_wd: int = 4, close_hour: int = 22,
+                 open_wd: int = 6, open_hour: int = 22) -> pd.DataFrame:
+    """সপ্তাহান্ত জানালার ক্যান্ডেল বাদ। আসল ডেটায় প্রোভাইডার সপ্তাহান্তেও (ফাঁকা নয়, সামান্য নড়াচড়াসহ)
+    ক্যান্ডেল দেয়; সেগুলো EMA/ATR কমিয়ে দেয় আর দিনের গণনা ভেঙে ফেলে।"""
+    return df[~weekend_mask(df.index, close_wd, close_hour, open_wd, open_hour).to_numpy()]
+
+
 # ---------- নেটওয়ার্ক ----------
 
 def fetch_candles(symbol: str, tf: str, bars: int, api_key: str, throttle: Throttle,
@@ -253,6 +270,9 @@ def fetch_pair(cfg: dict, pair: str, due: list[str], api_key: str, throttle: Thr
     h1 = drop_running(fetch_h1(symbol, total, **common), 60, now)
     if d.get("drop_flat_candles", True):
         h1 = drop_flat(h1)
+    if d.get("drop_weekend_candles", True):
+        w = d["weekend"]
+        h1 = drop_weekend(h1, w["close"]["weekday"], w["close"]["hour"], w["open"]["weekday"], w["open"]["hour"])
     out: dict[str, pd.DataFrame] = {"H1": h1}
     if "H4" in due:
         out["H4"] = drop_running(aggregate(h1, 4, 0, 1), 240, now)
@@ -309,6 +329,11 @@ def run_diagnose(cfg: dict, api_key: str, pairs: list[str], show_prices: bool = 
             print(f"{pair} H1 ({len(raw)}টি): ফাঁকা (high=low) = {int(flat.sum())}টি")
             print("   সপ্তাহের দিন অনুযায়ী ক্যান্ডেল (ফাঁকা): " + ", ".join(
                 f"{days[i]} {int((wd == i).sum())} ({int(flat[wd == i].sum())})" for i in range(7)))
+            w = d["weekend"]
+            inside = weekend_mask(raw.index, w["close"]["weekday"], w["close"]["hour"],
+                                  w["open"]["weekday"], w["open"]["hour"])
+            print(f"   সপ্তাহান্ত জানালায় (শুক্র {w['close']['hour']:02d}:00 – রবি {w['open']['hour']:02d}:00 UTC) "
+                  f"পড়ছে: {int(inside.sum())}টি (এগুলো বাদ যায়)")
             wk = raw[(wd >= 5)]
             if len(wk):
                 print(f"   শনি-রবি ক্যান্ডেল: {len(wk)}টি, তার মধ্যে ফাঁকা {int(flat[wk.index].sum())}টি")
