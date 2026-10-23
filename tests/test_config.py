@@ -39,3 +39,11 @@ def test_no_secrets_in_config():
     # দীর্ঘ Token-এর মতো লেখা বা পরিচিত কী-নাম থাকলে ফেল
     assert not re.search(r"\d{8,}:[A-Za-z0-9_-]{20,}", TEXT)
     assert not re.search(r"(?i)(api[_-]?key|token)\s*:\s*\S{12,}", TEXT)
+
+
+def test_data_quality_settings():
+    d = CFG["data"]
+    assert set(d["min_bars"]) == {"H1", "H4", "D1"}
+    assert d["min_bars"]["D1"] >= 250 and d["d1_min_h4_bars"] >= 2
+    # D1 বানাতে যথেষ্ট H4 আনা হয় কিনা (দিনে ~৬টা, সপ্তাহে ৫ দিন)
+    assert d["h4_bars"] / 6 >= d["min_bars"]["D1"] + 10

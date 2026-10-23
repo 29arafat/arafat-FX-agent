@@ -1,0 +1,32 @@
+name: data-check
+
+# হাতে চালানো। ৬ পেয়ারের ডেটা আনা যাচ্ছে কিনা, ক্যান্ডেলের সময় ঠিক কিনা যাচাই করে।
+# পাবলিক লগে দাম ছাপা হয় না (--no-prices)। দাম দেখতে Codespaces-এ চালান (README দেখুন)।
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: data-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Fetch check (no prices in public log)
+        env:
+          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
+        run: python -m src.fetch --check --no-prices

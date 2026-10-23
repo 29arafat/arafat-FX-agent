@@ -11,6 +11,8 @@ data:
   h4_bars: 1800               # ~৩০০ দিন, D1 বানাতে ও EMA200 ওয়ার্মআপে
   drop_running_candle: true   # চলমান ক্যান্ডেল বাদ (repainting রোধ)
   d1_day_start_hour: 0        # UTC ঘণ্টা। Exness D1 যাচাইয়ের পর ঠিক হবে (০ বা ২০)
+  d1_min_h4_bars: 2           # এর কম H4 ক্যান্ডেলের "টুকরো দিন" পাশের দিনে জোড়া লাগে (সপ্তাহান্ত)
+  min_bars: {H1: 250, H4: 250, D1: 250}   # এর কম ক্যান্ডেল এলে ডেটা অসম্পূর্ণ ধরে সিগন্যাল বন্ধ
   retries: 3
   request_timeout_seconds: 20
 

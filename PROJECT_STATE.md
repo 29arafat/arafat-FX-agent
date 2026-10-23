@@ -1,6 +1,6 @@
 ## PROJECT_STATE (আপডেট: ২০২৬-১০-২৩)
-- সম্পন্ন ধাপ: ০, ১
-- বর্তমান ধাপ: ১ (রিপো কাঠামো), অবস্থা: শেষ (কমিট ও Actions যাচাই আপনার হাতে)
+- সম্পন্ন ধাপ: ০, ১, ২ (কোড ও টেস্ট তৈরি; আসল ডেটা-যাচাই আপনার হাতে)
+- বর্তমান ধাপ: ২ (fetch, indicators), অবস্থা: zip প্রস্তুত, data-check চালানো বাকি
 - রিপোজিটরি: 29arafat/arafat-FX-agent (পাবলিক), শাখা: main (data ধাপ ৫-এ)
 - ডেলিভারি: zip আপলোড + scripts/apply_zip.sh (সরাসরি কমিট সম্ভব হয়নি)
 - Secrets আছে: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, PRICE_API_KEY (Twelve Data)
@@ -16,5 +16,7 @@
 - বাকি যাচাই: ফরেক্স পেয়ার ফ্রি Key-তে, Twelve Data "non-display" শর্ত,
   ইতিহাস কত পেছনে, ৬০ দিনের Actions নিয়ম, Cloudflare Pages বনাম Workers
 - জানা সমস্যা / বাকি কাজ: রিপো সুরক্ষা সেটিংস, বটে Start, Codespaces প্রথম চালু
-- ফাইল পরিবর্তন (শেষ zip): step1-structure.zip
-- পরের পদক্ষেপ: ধাপ ২ (fetch.py ও indicators.py)
+- ফাইল পরিবর্তন (শেষ zip): step2-data-indicators.zip (fetch.py, indicators.py, config.yaml, workflows, tests, README)
+- ধাপ ২ নিয়ম: Key হেডারে (URL-এ নয়); D1 H4 থেকে বানানো, সপ্তাহান্তের টুকরো জোড়া; min_bars ২৫০; Actions v6, ubuntu-24.04
+- ডেটা-শর্ত: ফ্রি ডেটা বাণিজ্যিক নয়, বাইরে প্রদর্শন/পুনর্বিতরণ অনুমোদন ছাড়া নয় → পাবলিক রিপোতে কাঁচা দাম/ক্যান্ডেল কমিট করব না; last_price পাবলিক JSON-এ রাখা নিয়ে ধাপ ৫-৬-এ সিদ্ধান্ত
+- পরের পদক্ষেপ: data-check চালিয়ে ফল জানানো, তারপর ধাপ ৩ (ব্যাকটেস্ট)

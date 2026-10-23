@@ -14,7 +14,7 @@ Python ও GitHub Actions দিয়ে তৈরি ফ্রি ফরেক
 ```
 config.yaml            সব সংখ্যা ও প্যারামিটার (এখানেই বদলান)
 requirements.txt       Python প্যাকেজ
-src/                   ইঞ্জিন (fetch, indicators, strategy, tracker, stats, notify, storage, main)
+src/                   ইঞ্জিন (fetch ✅, indicators ✅; বাকিগুলো পরের ধাপে)
 backtest/              ব্যাকটেস্ট
 tests/                 স্বয়ংক্রিয় টেস্ট
 web/                   PWA অ্যাপ
@@ -49,5 +49,17 @@ PROJECT_STATE.md       প্রজেক্টের বর্তমান অ�
 2. Codespaces খুলে টার্মিনালে লিখুন:
    `bash scripts/apply_zip.sh <zip-ফাইলের-নাম>.zip "<কমিট মেসেজ>"`
 
+## ডেটা যাচাই (এক কমান্ডে)
+**Actions-এ (দাম ছাড়া):** Actions → **data-check** → Run workflow। সব পেয়ারের ক্যান্ডেল সংখ্যা, সময় ও ক্রেডিট ব্যবহার দেখাবে। লগ পাবলিক, তাই দাম ছাপে না।
+
+**Codespaces-এ (দামসহ, শুধু আপনি দেখবেন):**
+1. টার্মিনালে `read -s PRICE_API_KEY` লিখে Enter চাপুন, Key পেস্ট করে আবার Enter (কিছু দেখাবে না, ইতিহাসেও থাকবে না)।
+2. `export PRICE_API_KEY`
+3. `pip install -r requirements.txt` (একবার)
+4. `python -m src.fetch --check`
+   শুধু গোল্ড: `python -m src.fetch --check --pairs XAUUSD`
+
+আউটপুটে D1 তিন ধরনে (দিন শুরু ০০:০০ ও ২০:০০ UTC) শেষ ৩ ক্যান্ডেল আসে, Exness-এর D1 Open-এর সাথে মিলিয়ে `d1_day_start_hour` ঠিক করতে।
+
 ## ধাপের অবস্থা
-০ ✅ সেটআপ · ১ কাঠামো · ২ ডেটা · ৩ ব্যাকটেস্ট · ৪ সিগন্যাল · ৫ ট্র্যাকিং · ৬ অ্যাপ · ৭ ডিপ্লয় · ৮ লাইভ টেস্ট
+০ ✅ সেটআপ · ১ ✅ কাঠামো · ২ ডেটা ও ইন্ডিকেটর · ৩ ব্যাকটেস্ট · ৪ সিগন্যাল · ৫ ট্র্যাকিং · ৬ অ্যাপ · ৭ ডিপ্লয় · ৮ লাইভ টেস্ট
