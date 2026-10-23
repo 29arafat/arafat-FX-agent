@@ -1,0 +1,18 @@
+# গোপন ফাইল, কখনো কমিট হবে না
+.env
+.env.*
+*.key
+*.pem
+secrets.*
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# অস্থায়ী ফাইল
+*.zip
+.DS_Store
+backtest/output/

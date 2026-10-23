@@ -1,0 +1,81 @@
+# ============================================================
+# config.yaml: সব সংখ্যা এখানে, কোডে নয়।
+# "প্রাথমিক অনুমান" লেখা মানগুলো ধাপ ৩-এর ব্যাকটেস্টে ঠিক হবে।
+# এখানে কোনো Token বা Key লিখবেন না (সেগুলো GitHub Secrets-এ)।
+# ============================================================
+
+data:
+  provider: twelvedata        # প্রোভাইডার, পেয়ারভিত্তিক বদলানো যায়
+  timezone: UTC               # আবশ্যিক: ডিফল্ট UTC+11, তাই সবসময় UTC পাঠাব
+  h1_bars: 500                # প্রতিবার কতগুলো H1 ক্যান্ডেল আনব
+  h4_bars: 1800               # ~৩০০ দিন, D1 বানাতে ও EMA200 ওয়ার্মআপে
+  drop_running_candle: true   # চলমান ক্যান্ডেল বাদ (repainting রোধ)
+  d1_day_start_hour: 0        # UTC ঘণ্টা। Exness D1 যাচাইয়ের পর ঠিক হবে (০ বা ২০)
+  retries: 3
+  request_timeout_seconds: 20
+
+api_limits:                   # Twelve Data ফ্রি (২০২৬-১০-২৩ যাচাই)
+  credits_per_minute: 8
+  credits_per_day: 800
+  sleep_between_requests_seconds: 8
+
+pairs:
+  XAUUSD: {symbol: "XAU/USD", decimals: 2, enabled: true}
+  EURUSD: {symbol: "EUR/USD", decimals: 5, enabled: true}
+  GBPUSD: {symbol: "GBP/USD", decimals: 5, enabled: true}
+  USDJPY: {symbol: "USD/JPY", decimals: 3, enabled: true}
+  AUDUSD: {symbol: "AUD/USD", decimals: 5, enabled: true}
+  USDCAD: {symbol: "USD/CAD", decimals: 5, enabled: true}
+
+timeframes: [H1, H4, D1]      # প্রতিটির স্বতন্ত্র সিগন্যাল
+
+indicators:
+  ema_fast: 20
+  ema_mid: 50
+  ema_slow: 200
+  rsi_period: 14
+  atr_period: 14
+
+trend:
+  ema_gap_min_atr: 0.3        # EMA50 ও EMA200 ফারাক < এই ভগ্নাংশ × ATR হলে "অস্পষ্ট" (প্রাথমিক অনুমান)
+
+scoring:                      # প্রাথমিক অনুমান, ধাপ ৩-এ ঠিক হবে
+  weights:
+    clear_trend: 2
+    pullback_zone: 2
+    confirmation: 2
+    rsi_state: 1
+    no_opposing_level: 1
+  threshold: 6                # স্কোর ≥ এই সংখ্যা হলে সিগন্যাল
+
+risk:
+  swing_lookback: 10          # সুইং হাই/লো খুঁজতে কত ক্যান্ডেল পেছনে
+  sl_atr_multiplier: 1.5
+  rr_default: 2               # কাছে বড় লেভেল থাকলে ১:২
+  rr_clear_path: 3            # পথ ফাঁকা থাকলে ১:৩
+  entry_valid_atr_fraction: 0.25
+
+rules:
+  max_running_per_pair_timeframe: 1
+  cooldown_candles: {H1: 4, H4: 2, D1: 1}   # TP/SL হিটের পর অপেক্ষা (নিজ টাইমফ্রেমের ক্যান্ডেল)
+  friday_cutoff_utc: "18:00"  # শুক্রবার এর পর নতুন সিগন্যাল নয়
+  tracking_timeframe: H1      # সব সিগন্যাল H1 ক্যান্ডেলে ট্র্যাক হবে
+  ambiguous_rule: SL          # একই ক্যান্ডেলে দুটোই ছুঁলে SL
+
+backtest:
+  oos_fraction: 0.3           # শেষ ৩০% ডেটা শুধু যাচাইয়ের জন্য, টিউনিংয়ে নয়
+  spread:                     # প্রাথমিক অনুমান, ধাপ ৩-এ আপনার Exness স্প্রেড বসবে
+    XAUUSD: 0.30
+    EURUSD: 0.00010
+    GBPUSD: 0.00012
+    USDJPY: 0.012
+    AUDUSD: 0.00012
+    USDCAD: 0.00015
+  min_trades_for_confidence: 30
+
+notify:
+  telegram_enabled: true
+  same_error_cooldown_hours: 6
+
+heartbeat:                    # ধাপ ৫-এ পূর্ণ হবে (অচলতার সতর্কতা)
+  stale_after_hours: 3

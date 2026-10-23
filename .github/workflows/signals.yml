@@ -1,0 +1,45 @@
+name: signals
+
+# কঙ্কাল (ধাপ ১): এখন শুধু পরিবেশ ও Secrets-এর উপস্থিতি যাচাই করে।
+# সিগন্যাল ইঞ্জিন ধাপ ৫-এ যোগ হবে।
+
+on:
+  schedule:
+    - cron: "7 * * * *"      # প্রতি ঘণ্টার ৭ মিনিটে (UTC); বিজোড় মিনিট ভিড় এড়ায়
+  workflow_dispatch:
+
+concurrency:
+  group: signals
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write        # data ব্রাঞ্চে কমিটের জন্য (ধাপ ৫ থেকে)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Check secrets are present (values are never printed)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
+        run: |
+          for n in TELEGRAM_TOKEN TELEGRAM_CHAT_ID PRICE_API_KEY; do
+            if [ -n "${!n}" ]; then echo "$n: set"; else echo "$n: MISSING"; exit 1; fi
+          done

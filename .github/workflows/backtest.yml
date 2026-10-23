@@ -1,0 +1,27 @@
+name: backtest
+
+# কঙ্কাল (ধাপ ১): হাতে চালানো। ব্যাকটেস্ট ধাপ ৩-এ যোগ হবে।
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: backtest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Placeholder
+        run: echo "Backtest will be added in step 3"
