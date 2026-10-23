@@ -7,7 +7,8 @@ import requests
 
 from src import fetch
 from src.fetch import (FetchError, Throttle, aggregate, check_alignment, drop_running,
-                       due_timeframes, fetch_all, fetch_candles, fetch_h1, parse_response)
+                       drop_flat, due_timeframes, fetch_all, fetch_candles, fetch_h1, fetch_pair,
+                       parse_response)
 
 KEY = "SECRETKEY123"
 NOW = datetime(2026, 10, 23, 4, 7, tzinfo=timezone.utc)  # শুক্রবার, ০৪:০৭ UTC
@@ -222,6 +223,53 @@ def test_trailing_sunday_fragment_without_monday_is_dropped():
     assert d1.index.max() < ts("2026-10-11")
 
 
+# ---------- সপ্তাহান্তের ভরা (ফাঁকা) ক্যান্ডেল ----------
+
+def with_weekend_fill(h1):
+    """প্রোভাইডার সপ্তাহান্ত ভরে দিলে যেমন: শুক্র ২২:০০ থেকে রবি ২২:০০ পর্যন্ত শেষ ক্লোজে ফাঁকা ক্যান্ডেল।"""
+    rows = []
+    t0, t1 = h1.index[0], h1.index[-1]
+    t = t0
+    while t <= t1:
+        if t in h1.index:
+            rows.append(h1.loc[t].to_dict() | {"datetime": t})
+            last = h1.loc[t]["close"]
+        else:
+            rows.append({"open": last, "high": last, "low": last, "close": last, "datetime": t})
+        t += timedelta(hours=1)
+    return pd.DataFrame(rows).set_index("datetime")
+
+
+def test_drop_flat_removes_weekend_fill_and_restores_gaps():
+    h1 = week_h1()
+    filled = with_weekend_fill(h1)
+    assert len(filled) > len(h1)                      # সপ্তাহান্তের ঘণ্টাগুলো ভরা
+    cleaned = drop_flat(filled)
+    assert cleaned.index.equals(h1.index)
+    d_clean = aggregate(cleaned, 24, 20, 3)
+    d_orig = aggregate(h1, 24, 20, 3)
+    assert d_clean.equals(d_orig)
+    # ফিল্টার ছাড়া শনি-রবির ফাঁকা দিন ঢুকে যেত
+    assert len(aggregate(filled, 24, 20, 3)) > len(d_orig)
+
+
+def test_fetch_pair_drops_flat_candles():
+    base = server()
+
+    def responder(n, params):
+        resp = base(n, params)
+        for r in resp.json()["values"]:
+            if r["datetime"].endswith("05:00:00"):     # প্রতিদিন ০৫:০০ ক্যান্ডেল ফাঁকা
+                r["high"] = r["low"] = r["open"] = r["close"] = "100.0"
+        return resp
+    cfg = {**CFG, "data": {**CFG["data"], "drop_flat_candles": True}}
+    out = fetch_pair(cfg, "XAUUSD", ["H1"], KEY, thr(), NOW, Session(responder))
+    assert (out["H1"].index.hour != 5).all()
+    cfg_off = {**CFG, "data": {**CFG["data"], "drop_flat_candles": False}}
+    out2 = fetch_pair(cfg_off, "XAUUSD", ["H1"], KEY, thr(), NOW, Session(responder))
+    assert (out2["H1"].index.hour == 5).any()
+
+
 # ---------- সময়সূচি ----------
 
 def cfg_for(start=20):
@@ -253,7 +301,7 @@ def server(fail_symbols=()):
 
 
 CFG = {
-    "data": {"timezone": "UTC", "h1_bars": 2500, "d1_h1_bars": 7000, "d1_day_start_hour": 20,
+    "data": {"timezone": "UTC", "h1_bars": 3500, "d1_h1_bars": 9000, "d1_day_start_hour": 20, "drop_flat_candles": True,
              "d1_min_h1_bars": 3, "retries": 1, "request_timeout_seconds": 5,
              "min_bars": {"H1": 250, "H4": 250, "D1": 250}},
     "api_limits": {"sleep_between_requests_seconds": 0},
@@ -275,10 +323,10 @@ def test_deep_fetch_paginates_and_builds_h4_d1():
     s = Session(server())
     data, errors, t = fetch_all(CFG, KEY, NOW, session=s, due=["H1", "H4", "D1"])
     assert not errors and t.credits_used == 4          # প্রতি পেয়ারে ২ পেজ, H4/D1 আলাদা কল নয়
-    assert s.calls[0][1]["outputsize"] == 5000 and s.calls[1][1]["outputsize"] == 2000
+    assert s.calls[0][1]["outputsize"] == 5000 and s.calls[1][1]["outputsize"] == 4000
     assert "end_date" in s.calls[1][1] and "end_date" not in s.calls[0][1]
     x = data["XAUUSD"]
-    assert len(x["H1"]) == 7000 - 1 or len(x["H1"]) >= 6990   # ডুপ্লিকেট বাদে ~৭০০০
+    assert len(x["H1"]) >= 8990   # ডুপ্লিকেট ও চলমান বাদে ~৯০০০
     assert x["H1"].index.is_unique and x["H1"].index.is_monotonic_increasing
     assert x["H4"].index[-1] == ts("2026-10-23 00:00")
     assert x["D1"].index[-1] == ts("2026-10-22 20:00") - timedelta(days=1)  # ২২ ২০:০০-এর দিন চলমান
@@ -345,6 +393,7 @@ def test_cli_check_with_and_without_prices():
 def test_cli_diagnose_reports_off_grid_candles_without_prices():
     code, out, _ = run_cli(["--check", "--no-prices", "--diagnose"])
     assert code == 0 and "গ্রিডের বাইরে" in out and "01h" in out
+    assert "শনি-রবি ক্যান্ডেল" in out and "ফাঁকা" in out and "O=" not in out
 
 
 def test_cli_without_key_exits_cleanly():

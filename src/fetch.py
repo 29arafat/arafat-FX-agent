@@ -122,6 +122,12 @@ def drop_running(df: pd.DataFrame, minutes: int, now: datetime) -> pd.DataFrame:
     return df[ends <= pd.Timestamp(now)]
 
 
+def drop_flat(df: pd.DataFrame) -> pd.DataFrame:
+    """শূন্য-রেঞ্জ (high == low) ক্যান্ডেল বাদ। আসল ডেটায় প্রোভাইডার সপ্তাহান্তে ফাঁকা ক্যান্ডেল
+    ভরে দিতে পারে; সেগুলো EMA/ATR বিকৃত করে এবং বাজার-বন্ধের ফাঁক ঢেকে দেয়।"""
+    return df[(df["high"] - df["low"]) > 0]
+
+
 # ---------- নেটওয়ার্ক ----------
 
 def fetch_candles(symbol: str, tf: str, bars: int, api_key: str, throttle: Throttle,
@@ -245,6 +251,8 @@ def fetch_pair(cfg: dict, pair: str, due: list[str], api_key: str, throttle: Thr
                   retries=d["retries"], timeout=d["request_timeout_seconds"], tz=d["timezone"])
     total = d["d1_h1_bars"] if "D1" in due else d["h1_bars"]   # D1 লাগলে গভীর ইতিহাস
     h1 = drop_running(fetch_h1(symbol, total, **common), 60, now)
+    if d.get("drop_flat_candles", True):
+        h1 = drop_flat(h1)
     out: dict[str, pd.DataFrame] = {"H1": h1}
     if "H4" in due:
         out["H4"] = drop_running(aggregate(h1, 4, 0, 1), 240, now)
@@ -285,12 +293,30 @@ def _fmt_row(ts, r, dp: int, show_prices: bool) -> str:
     return line
 
 
-def run_diagnose(cfg: dict, api_key: str, pairs: list[str]) -> None:
-    """প্রোভাইডারের নিজস্ব H4 ক্যান্ডেল কোন ঘণ্টায় শুরু হয় তার গণনা (দাম নেই)। ১ ক্রেডিট/পেয়ার।"""
+def run_diagnose(cfg: dict, api_key: str, pairs: list[str], show_prices: bool = False) -> None:
+    """রোগনির্ণয়: (ক) সপ্তাহান্তে H1 ক্যান্ডেল আছে কিনা, কতগুলো ফাঁকা; (খ) প্রোভাইডারের নিজস্ব H4 গ্রিড।
+    শুধু গণনা, দাম ছাপে না (show_prices ছাড়া)। ২ ক্রেডিট/পেয়ার।"""
     d = cfg["data"]
     throttle = Throttle(cfg["api_limits"]["sleep_between_requests_seconds"])
-    print("\n-- প্রোভাইডারের নিজস্ব H4 (শুধু রোগনির্ণয়) --")
+    print("\n-- রোগনির্ণয় --")
+    days = ["সোম", "মঙ্গল", "বুধ", "বৃহ", "শুক্র", "শনি", "রবি"]
     for pair in pairs:
+        try:
+            raw = fetch_candles(cfg["pairs"][pair]["symbol"], "H1", 2500, api_key, throttle,
+                                retries=d["retries"], timeout=d["request_timeout_seconds"], tz=d["timezone"])
+            flat = (raw["high"] - raw["low"]) <= 0
+            wd = pd.Series(raw.index.dayofweek, index=raw.index)
+            print(f"{pair} H1 ({len(raw)}টি): ফাঁকা (high=low) = {int(flat.sum())}টি")
+            print("   সপ্তাহের দিন অনুযায়ী ক্যান্ডেল (ফাঁকা): " + ", ".join(
+                f"{days[i]} {int((wd == i).sum())} ({int(flat[wd == i].sum())})" for i in range(7)))
+            wk = raw[(wd >= 5)]
+            if len(wk):
+                print(f"   শনি-রবি ক্যান্ডেল: {len(wk)}টি, তার মধ্যে ফাঁকা {int(flat[wk.index].sum())}টি")
+                if show_prices:
+                    for ts_, r in wk.head(2).iterrows():
+                        print(f"   উদাহরণ {_fmt(ts_)} O={r['open']} H={r['high']} L={r['low']} C={r['close']}")
+        except FetchError as e:
+            print(f"{pair}: সপ্তাহান্ত যাচাই ব্যর্থ ({clean(str(e), api_key)})")
         try:
             df = fetch_candles(cfg["pairs"][pair]["symbol"], "H4", 1800, api_key, throttle,
                                retries=d["retries"], timeout=d["request_timeout_seconds"],
@@ -327,7 +353,7 @@ def run_check(cfg: dict, api_key: str, pairs: list[str] | None, show_prices: boo
     for pair, err in errors.items():
         print(f"\n!! {pair}: {err}")
     if diagnose:
-        run_diagnose(cfg, api_key, pairs or [p for p, v in cfg["pairs"].items() if v.get("enabled", True)][:1])
+        run_diagnose(cfg, api_key, pairs or [p for p, v in cfg["pairs"].items() if v.get("enabled", True)][:1], show_prices)
     print(f"\nমোট ক্রেডিট ব্যবহৃত: {throttle.credits_used} | সময়: {time.monotonic() - started:.0f} সেকেন্ড")
     print(f"সফল: {len(data)} | ব্যর্থ: {len(errors)}")
     return 1 if errors else 0
@@ -338,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--check", action="store_true", help="সব পেয়ারের ডেটা এনে সারাংশ দেখাও")
     ap.add_argument("--pairs", help="কমা দিয়ে, যেমন XAUUSD,EURUSD (ডিফল্ট: সব)")
     ap.add_argument("--no-prices", action="store_true", help="দাম ছাপবে না (পাবলিক লগের জন্য)")
-    ap.add_argument("--diagnose", action="store_true", help="প্রোভাইডারের নিজস্ব H4 গ্রিডের ঘণ্টা গণনা")
+    ap.add_argument("--diagnose", action="store_true", help="সপ্তাহান্তের ফাঁকা ক্যান্ডেল ও প্রোভাইডারের H4 গ্রিড গণনা")
     args = ap.parse_args(argv)
     key = os.environ.get("PRICE_API_KEY", "").strip()
     if not key:

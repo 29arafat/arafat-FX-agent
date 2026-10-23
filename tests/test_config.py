@@ -45,7 +45,8 @@ def test_data_quality_settings():
     d = CFG["data"]
     assert set(d["min_bars"]) == {"H1", "H4", "D1"}
     assert d["min_bars"]["D1"] >= 250 and d["d1_min_h1_bars"] >= 2
-    # D1 বানাতে যথেষ্ট H1 আনা হয় কিনা (ট্রেডিং দিনে ~২৩টা H1)
-    assert d["d1_h1_bars"] / 23 >= d["min_bars"]["D1"] + 20
-    assert d["h1_bars"] / 4 >= d["min_bars"]["H4"] + 200   # H4: EMA200 + ওয়ার্মআপ
+    # সপ্তাহান্ত বাদে ৫/৭ ঘণ্টা থাকে; D1: দিনে ১টা, H4: দিনে ~৬টা
+    assert d["d1_h1_bars"] / 24 * 5 / 7 >= d["min_bars"]["D1"] + 10
+    assert d["h1_bars"] / 24 * 5 / 7 * 6 >= d["min_bars"]["H4"] + 200   # EMA200 + ওয়ার্মআপ
+    assert d["drop_flat_candles"] is True
     assert d["d1_h1_bars"] <= 10000 and "h4_bars" not in d
