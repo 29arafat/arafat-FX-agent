@@ -1,9 +1,11 @@
-"""ডেটা আনা: Twelve Data থেকে H1/H4 ক্যান্ডেল, H4 থেকে D1 বানানো।
+"""ডেটা আনা: Twelve Data থেকে শুধু H1 আনা হয়; H4 ও D1 আমরা H1 জুড়ে নিজে বানাই।
 
 মূল নিয়ম (যাচাই করা, ২০২৬-১০-২৩):
 - সময় সবসময় timezone=UTC (প্রোভাইডারের ডিফল্ট UTC নয়)।
 - `datetime` = ক্যান্ডেলের শুরুর সময়। সর্বশেষ ক্যান্ডেল চলমান, তাই বাদ দেওয়া হয়।
-- প্রোভাইডারের D1 ২০:০০-২০:০০ UTC, তাই D1 আমরা H4 জুড়ে নিজে বানাই।
+- প্রোভাইডারের নিজস্ব H4/D1 গ্রিড স্থির নয় (আসল ডেটায় H4 সারিবদ্ধ পাওয়া যায়নি, D1 ২০:০০-২০:০০
+  UTC), তাই H4 (০,৪,৮…) ও D1 (config-এর ঘণ্টা) আমরা H1 থেকে নির্দিষ্ট UTC গ্রিডে বানাই।
+- একটা কলে সর্বোচ্চ ৫০০০ ক্যান্ডেল; D1-এর জন্য বেশি লাগলে end_date দিয়ে দ্বিতীয় পেজ।
 - API Key কখনো URL-এ যায় না (Authorization হেডারে), লগেও ছাপা হয় না।
 - ১ রিকোয়েস্ট = ১ ক্রেডিট; মিনিটে ৮, দিনে ৮০০।
 
@@ -123,12 +125,15 @@ def drop_running(df: pd.DataFrame, minutes: int, now: datetime) -> pd.DataFrame:
 # ---------- নেটওয়ার্ক ----------
 
 def fetch_candles(symbol: str, tf: str, bars: int, api_key: str, throttle: Throttle,
-                  session=None, retries: int = 3, timeout: float = 20, tz: str = "UTC") -> pd.DataFrame:
+                  session=None, retries: int = 3, timeout: float = 20, tz: str = "UTC",
+                  end_date: datetime | None = None, check_align: bool = True) -> pd.DataFrame:
     """একটা সিম্বল ও টাইমফ্রেমের ক্যান্ডেল (চলমান সহ, UTC)। ব্যর্থ হলে FetchError।"""
     if not 1 <= bars <= 5000:
         raise ValueError("bars ১ থেকে ৫০০০ হতে হবে")
     session = session or requests.Session()
     params = {"symbol": symbol, "interval": INTERVALS[tf][0], "outputsize": bars, "timezone": tz}
+    if end_date is not None:
+        params["end_date"] = pd.Timestamp(end_date).strftime("%Y-%m-%dT%H:%M:%S")
     headers = {"Authorization": f"apikey {api_key}"}
     last_err = "অজানা"
     for attempt in range(retries + 1):
@@ -139,7 +144,8 @@ def fetch_candles(symbol: str, tf: str, bars: int, api_key: str, throttle: Throt
             if resp.status_code >= 500:
                 raise FetchError(f"সার্ভার এরর {resp.status_code}", retryable=True)
             df = parse_response(resp.json())
-            check_alignment(df, tf)
+            if check_align:
+                check_alignment(df, tf)
             return df
         except RateLimitError as e:
             last_err = str(e)
@@ -155,55 +161,67 @@ def fetch_candles(symbol: str, tf: str, bars: int, api_key: str, throttle: Throt
     raise FetchError(f"{symbol} {tf}: {retries + 1} বার চেষ্টার পরও ব্যর্থ ({last_err})")
 
 
-# ---------- H4 থেকে D1 ----------
+# ---------- H1 থেকে H4 ও D1 ----------
 
-def build_d1(h4: pd.DataFrame, day_start_hour: int = 0, min_h4_bars: int = 2) -> pd.DataFrame:
-    """ক্লোজড H4 ক্যান্ডেল জুড়ে D1 বানায়। দিন শুরু `day_start_hour` UTC-তে।
+def fetch_h1(symbol: str, total: int, **common) -> pd.DataFrame:
+    """H1 ক্যান্ডেল (চলমান সহ)। total > ৫০০০ হলে end_date দিয়ে দ্বিতীয় পেজ (আরও পুরনো ডেটা)।"""
+    first = fetch_candles(symbol, "H1", min(total, 5000), **common)
+    if total <= 5000 or len(first) < 5000:
+        return first
+    second = fetch_candles(symbol, "H1", total - 5000, end_date=first.index[0].to_pydatetime(), **common)
+    both = pd.concat([second, first])
+    return both[~both.index.duplicated(keep="last")].sort_index()
 
-    - ইতিহাসের প্রথম (অসম্পূর্ণ) দিন বাদ।
-    - কম ক্যান্ডেলের টুকরো দিন (সপ্তাহান্তের আগে-পরে) পাশের দিনে জুড়ে যায়:
-      সপ্তাহান্ত-বিরতির পরের টুকরো সামনের দিনে, অন্যটা আগের দিনে।
-    - ফেরত DataFrame-এ চলমান দিনও থাকতে পারে; drop_running(…, 1440, now) দিয়ে বাদ দিন।
+
+def aggregate(df: pd.DataFrame, period_hours: int, anchor_hour: int = 0, min_bars: int = 1) -> pd.DataFrame:
+    """ক্লোজড ক্যান্ডেল জুড়ে বড় টাইমফ্রেম বানায় (যেমন H1 থেকে H4 বা D1)।
+
+    - গ্রিড: anchor_hour (UTC) থেকে period_hours পর পর। H4: (4, 0), D1: (24, config-এর ঘণ্টা)।
+    - ইতিহাসের প্রথম (অসম্পূর্ণ) গ্রুপ বাদ।
+    - min_bars-এর কম ক্যান্ডেলের "টুকরো" গ্রুপ পাশের গ্রুপে জোড়া লাগে: সপ্তাহান্ত-বিরতির (২৪ ঘণ্টার বেশি
+      ফাঁক) পরের টুকরো সামনের গ্রুপে, অন্যটা আগের গ্রুপে। সামনের গ্রুপ না থাকলে টুকরো বাদ।
+    - ফেরত DataFrame-এ চলমান গ্রুপও থাকতে পারে; drop_running(…) দিয়ে বাদ দিন।
     """
-    if h4.empty:
-        return h4.copy()
-    idx = h4.index
-    shift = pd.Timedelta(hours=day_start_hour)
-    keys = pd.Series((idx - shift).floor("D") + shift, index=idx)
+    cols = [*OHLC, "bars"]
+    if df.empty:
+        return pd.DataFrame(columns=cols, index=pd.DatetimeIndex([], tz="UTC", name="datetime"), dtype=float)
+    idx = df.index
+    shift = pd.Timedelta(hours=anchor_hour)
+    keys = pd.Series((idx - shift).floor(f"{period_hours}h") + shift, index=idx)
     order = list(dict.fromkeys(keys))
     counts = keys.value_counts()
     first_key = order[0]
     drop_mask = pd.Series(False, index=idx)
     for k in order:
-        if counts[k] >= min_h4_bars or k == first_key:
+        if counts[k] >= min_bars or k == first_key:
             continue
         members = idx[keys == k]
         pos = idx.get_loc(members[0])
         gap = members[0] - idx[pos - 1] if pos > 0 else pd.Timedelta(0)
         k_pos = order.index(k)
-        if gap > pd.Timedelta(hours=24):  # সপ্তাহান্তের পরের টুকরো, সামনে জোড়া
+        if gap > pd.Timedelta(hours=24):      # সপ্তাহান্তের পরের টুকরো, সামনে জোড়া
             if k_pos + 1 < len(order):
                 keys[keys == k] = order[k_pos + 1]
             else:
-                drop_mask[keys == k] = True  # সামনের দিন এখনো আসেনি
-        elif k_pos > 0:                      # আগের দিনে জোড়া
+                drop_mask[keys == k] = True   # সামনের গ্রুপ এখনো আসেনি
+        elif k_pos > 0:                        # আগের গ্রুপে জোড়া
             keys[keys == k] = order[k_pos - 1]
     keep = ~drop_mask & (keys != first_key)
-    h4k, kk = h4[keep], keys[keep]
-    if h4k.empty:
-        return h4k.copy()
-    grp = h4k.groupby(kk.to_numpy())
-    d1 = pd.DataFrame({
+    part, kk = df[keep], keys[keep]
+    if part.empty:
+        return pd.DataFrame(columns=cols, index=pd.DatetimeIndex([], tz="UTC", name="datetime"), dtype=float)
+    grp = part.groupby(kk.to_numpy())
+    out = pd.DataFrame({
         "open": grp["open"].first(),
         "high": grp["high"].max(),
         "low": grp["low"].min(),
         "close": grp["close"].last(),
         "bars": grp["close"].count(),
     })
-    d1.index = pd.DatetimeIndex(d1.index, name="datetime")
-    if d1.index.tz is None:
-        d1.index = d1.index.tz_localize("UTC")
-    return d1.sort_index()
+    out.index = pd.DatetimeIndex(out.index, name="datetime")
+    if out.index.tz is None:
+        out.index = out.index.tz_localize("UTC")
+    return out.sort_index()
 
 
 # ---------- সময়সূচি ও সম্পূর্ণ ফেচ ----------
@@ -220,25 +238,21 @@ def due_timeframes(now: datetime, cfg: dict) -> list[str]:
 
 def fetch_pair(cfg: dict, pair: str, due: list[str], api_key: str, throttle: Throttle,
                now: datetime, session=None) -> dict[str, pd.DataFrame]:
-    """একটা পেয়ারের ক্লোজড ক্যান্ডেল: {টাইমফ্রেম: DataFrame}।"""
+    """একটা পেয়ারের ক্লোজড ক্যান্ডেল: {টাইমফ্রেম: DataFrame}। শুধু H1 আনা হয়, বাকিগুলো বানানো।"""
     d = cfg["data"]
     symbol = cfg["pairs"][pair]["symbol"]
     common = dict(api_key=api_key, throttle=throttle, session=session,
                   retries=d["retries"], timeout=d["request_timeout_seconds"], tz=d["timezone"])
-    min_bars = d["min_bars"]
-    out: dict[str, pd.DataFrame] = {}
-    if "H1" in due:
-        out["H1"] = drop_running(fetch_candles(symbol, "H1", d["h1_bars"], **common), 60, now)
-    if "H4" in due or "D1" in due:
-        h4 = drop_running(fetch_candles(symbol, "H4", d["h4_bars"], **common), 240, now)
-        if "H4" in due:
-            out["H4"] = h4
-        if "D1" in due:
-            d1 = build_d1(h4, d["d1_day_start_hour"], d.get("d1_min_h4_bars", 2))
-            out["D1"] = drop_running(d1, 1440, now)
+    total = d["d1_h1_bars"] if "D1" in due else d["h1_bars"]   # D1 লাগলে গভীর ইতিহাস
+    h1 = drop_running(fetch_h1(symbol, total, **common), 60, now)
+    out: dict[str, pd.DataFrame] = {"H1": h1}
+    if "H4" in due:
+        out["H4"] = drop_running(aggregate(h1, 4, 0, 1), 240, now)
+    if "D1" in due:
+        out["D1"] = drop_running(aggregate(h1, 24, d["d1_day_start_hour"], d["d1_min_h1_bars"]), 1440, now)
     for tf, df in out.items():
-        if len(df) < min_bars[tf]:
-            raise FetchError(f"{pair} {tf}: ক্যান্ডেল কম ({len(df)} < {min_bars[tf]})")
+        if len(df) < d["min_bars"][tf]:
+            raise FetchError(f"{pair} {tf}: ক্যান্ডেল কম ({len(df)} < {d['min_bars'][tf]})")
     return out
 
 
@@ -264,30 +278,56 @@ def _fmt(ts) -> str:
     return pd.Timestamp(ts).strftime("%Y-%m-%d %H:%M")
 
 
-def run_check(cfg: dict, api_key: str, pairs: list[str] | None, show_prices: bool) -> int:
+def _fmt_row(ts, r, dp: int, show_prices: bool) -> str:
+    line = f"   {_fmt(ts)}  bars={int(r['bars'])}"
+    if show_prices:
+        line += f"  O={r['open']:.{dp}f} H={r['high']:.{dp}f} L={r['low']:.{dp}f} C={r['close']:.{dp}f}"
+    return line
+
+
+def run_diagnose(cfg: dict, api_key: str, pairs: list[str]) -> None:
+    """প্রোভাইডারের নিজস্ব H4 ক্যান্ডেল কোন ঘণ্টায় শুরু হয় তার গণনা (দাম নেই)। ১ ক্রেডিট/পেয়ার।"""
+    d = cfg["data"]
+    throttle = Throttle(cfg["api_limits"]["sleep_between_requests_seconds"])
+    print("\n-- প্রোভাইডারের নিজস্ব H4 (শুধু রোগনির্ণয়) --")
+    for pair in pairs:
+        try:
+            df = fetch_candles(cfg["pairs"][pair]["symbol"], "H4", 1800, api_key, throttle,
+                               retries=d["retries"], timeout=d["request_timeout_seconds"],
+                               tz=d["timezone"], check_align=False)
+        except FetchError as e:
+            print(f"{pair}: ব্যর্থ ({clean(str(e), api_key)})")
+            continue
+        hist = df.index.hour.value_counts().sort_index()
+        print(f"{pair}: {len(df)} ক্যান্ডেল, {_fmt(df.index[0])} থেকে {_fmt(df.index[-1])}")
+        print("   শুরুর ঘণ্টা (UTC): " + ", ".join(f"{h:02d}h×{n}" for h, n in hist.items()))
+        odd = df[df.index.hour % 4 != 0]
+        if len(odd):
+            print(f"   ০/৪/৮… গ্রিডের বাইরে: {len(odd)}টি, প্রথম {_fmt(odd.index[0])}, শেষ {_fmt(odd.index[-1])}")
+
+
+def run_check(cfg: dict, api_key: str, pairs: list[str] | None, show_prices: bool,
+              diagnose: bool = False) -> int:
     now = utcnow()
     started = time.monotonic()
     print(f"এখন (UTC): {_fmt(now)} | দাম দেখানো: {'হ্যাঁ' if show_prices else 'না'}")
     day0 = cfg["data"]["d1_day_start_hour"]
     data, errors, throttle = fetch_all(cfg, api_key, now, pairs=pairs, due=["H1", "H4", "D1"])
     for pair, tfs in data.items():
-        h1, h4 = tfs["H1"], tfs["H4"]
+        dp = cfg["pairs"][pair]["decimals"]
+        h1, h4, d1 = tfs["H1"], tfs["H4"], tfs["D1"]
         print(f"\n== {pair} ({cfg['pairs'][pair]['symbol']}) ==")
-        print(f"H1: {len(h1)} ক্লোজড | শেষ ক্যান্ডেল শুরু {_fmt(h1.index[-1])} UTC")
-        print(f"H4: {len(h4)} ক্লোজড | শেষ ক্যান্ডেল শুরু {_fmt(h4.index[-1])} UTC | প্রথম {_fmt(h4.index[0])}")
-        for start in sorted({0, 20, day0}):
-            d1 = build_d1(h4, start, cfg["data"].get("d1_min_h4_bars", 2))
-            d1 = drop_running(d1, 1440, now)
-            tag = " (config)" if start == day0 else ""
-            print(f"D1 (দিন শুরু {start:02d}:00 UTC{tag}): {len(d1)} ক্যান্ডেল")
-            for ts, r in d1.tail(3).iterrows():
-                line = f"   {_fmt(ts)}  bars={int(r['bars'])}"
-                if show_prices:
-                    dp = cfg["pairs"][pair]["decimals"]
-                    line += f"  O={r['open']:.{dp}f} H={r['high']:.{dp}f} L={r['low']:.{dp}f} C={r['close']:.{dp}f}"
-                print(line)
+        print(f"H1: {len(h1)} ক্লোজড | প্রথম {_fmt(h1.index[0])} | শেষ {_fmt(h1.index[-1])}")
+        print(f"H4 (বানানো, ০/৪/৮… UTC): {len(h4)} ক্লোজড | শেষ ক্যান্ডেল শুরু {_fmt(h4.index[-1])}")
+        for ts, r in h4.tail(2).iterrows():
+            print(_fmt_row(ts, r, dp, show_prices))
+        print(f"D1 (বানানো, দিন শুরু {day0:02d}:00 UTC): {len(d1)} ক্লোজড")
+        for ts, r in d1.tail(3).iterrows():
+            print(_fmt_row(ts, r, dp, show_prices))
     for pair, err in errors.items():
         print(f"\n!! {pair}: {err}")
+    if diagnose:
+        run_diagnose(cfg, api_key, pairs or [p for p, v in cfg["pairs"].items() if v.get("enabled", True)][:1])
     print(f"\nমোট ক্রেডিট ব্যবহৃত: {throttle.credits_used} | সময়: {time.monotonic() - started:.0f} সেকেন্ড")
     print(f"সফল: {len(data)} | ব্যর্থ: {len(errors)}")
     return 1 if errors else 0
@@ -298,6 +338,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--check", action="store_true", help="সব পেয়ারের ডেটা এনে সারাংশ দেখাও")
     ap.add_argument("--pairs", help="কমা দিয়ে, যেমন XAUUSD,EURUSD (ডিফল্ট: সব)")
     ap.add_argument("--no-prices", action="store_true", help="দাম ছাপবে না (পাবলিক লগের জন্য)")
+    ap.add_argument("--diagnose", action="store_true", help="প্রোভাইডারের নিজস্ব H4 গ্রিডের ঘণ্টা গণনা")
     args = ap.parse_args(argv)
     key = os.environ.get("PRICE_API_KEY", "").strip()
     if not key:
@@ -309,7 +350,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     pairs = [p.strip().upper() for p in args.pairs.split(",")] if args.pairs else None
     try:
-        return run_check(cfg, key, pairs, show_prices=not args.no_prices)
+        return run_check(cfg, key, pairs, show_prices=not args.no_prices, diagnose=args.diagnose)
     except Exception as e:  # কখনো Key ফাঁস করবে না
         print(f"ত্রুটি: {type(e).__name__}: {clean(str(e), key)}"[:500], file=sys.stderr)
         return 1

@@ -25,13 +25,13 @@ def test_timeframes_and_rules():
 
 
 def test_d1_day_start_is_valid_hour():
-    assert CFG["data"]["d1_day_start_hour"] in range(0, 24, 4)
+    assert CFG["data"]["d1_day_start_hour"] in range(24)
 
 
 def test_api_budget_fits_free_limit():
-    # প্রতিদিন: H1 = পেয়ার×২৪, H4 = পেয়ার×৬ (D1 H4 থেকে বানানো)
+    # প্রতিদিন: H1 = পেয়ার×২৪ কল; D1-এর দিনে একটা বাড়তি পেজ (পেয়ার×১); H4 ও D1 H1 থেকে বানানো
     n = len(CFG["pairs"])
-    daily = n * 24 + n * 6
+    daily = n * 24 + n * 1
     assert daily < CFG["api_limits"]["credits_per_day"]
 
 
@@ -44,6 +44,8 @@ def test_no_secrets_in_config():
 def test_data_quality_settings():
     d = CFG["data"]
     assert set(d["min_bars"]) == {"H1", "H4", "D1"}
-    assert d["min_bars"]["D1"] >= 250 and d["d1_min_h4_bars"] >= 2
-    # D1 বানাতে যথেষ্ট H4 আনা হয় কিনা (দিনে ~৬টা, সপ্তাহে ৫ দিন)
-    assert d["h4_bars"] / 6 >= d["min_bars"]["D1"] + 10
+    assert d["min_bars"]["D1"] >= 250 and d["d1_min_h1_bars"] >= 2
+    # D1 বানাতে যথেষ্ট H1 আনা হয় কিনা (ট্রেডিং দিনে ~২৩টা H1)
+    assert d["d1_h1_bars"] / 23 >= d["min_bars"]["D1"] + 20
+    assert d["h1_bars"] / 4 >= d["min_bars"]["H4"] + 200   # H4: EMA200 + ওয়ার্মআপ
+    assert d["d1_h1_bars"] <= 10000 and "h4_bars" not in d
