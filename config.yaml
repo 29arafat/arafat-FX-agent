@@ -110,7 +110,9 @@ notify:
   display_utc_offset_hours: 3   # বার্তার সময় সৌদি (Asia/Riyadh = UTC+3, কোনো DST নেই)
 
 storage:
-  state_file: state/signals.json   # ধাপ ৪: লোকাল ফাইল (gitignored); ধাপ ৫-এ data ব্রাঞ্চে সরবে
+  state_file: state/signals.json   # লোকাল রান (gitignored)। Actions-এ --publish data দিলে data/state.json ও data ব্রাঞ্চে কমিট হয়
+  public_last_price: false         # সিদ্ধান্ত: পাবলিক JSON-এ বর্তমান দাম নয় (Twelve Data শর্ত); শুধু সিগন্যালের দাম থাকে
 
-heartbeat:                    # ধাপ ৫-এ পূর্ণ হবে (অচলতার সতর্কতা)
-  stale_after_hours: 3
+heartbeat:                    # অচলতার সতর্কতা
+  stale_after_hours: 3        # শেষ রানের পর এর বেশি বিরতি হলে পরের রানে সতর্কতা
+  daily_utc_hour: 5           # প্রতিদিন এই UTC ঘণ্টার পর প্রথম রানে "সিস্টেম সচল" বার্তা (সৌদি ০৮:xx)। না এলে বুঝবেন cron বন্ধ

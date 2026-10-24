@@ -16,8 +16,9 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-from .notify import error_key, format_close, format_error, format_open
-from .strategy import NS_PER_MIN, build_frames, cooldown_ns, evaluate, friday_blocked
+from .notify import error_key, format_close, format_error, format_heartbeat, format_open
+from .strategy import NS_PER_MIN, build_frames, cooldown_ns, evaluate, friday_blocked, trend_direction
+from .stats import summarize
 from .tracker import find_exit, result_r
 
 
@@ -126,7 +127,7 @@ def send_pending(state: dict, notifier, cfg: dict, now_ns: int, save=None) -> in
                 s["notified_open"] = True
                 sent += 1
                 if save:
-                    save()
+                    save(True)
         if s["status"] != "Running" and s.get("notified_close") is False:
             if s["notified_open"] is not True:
                 s["notified_close"] = "skipped"          # শুরুর বার্তাই যায়নি, ফলাফলের বার্তা অর্থহীন
@@ -134,7 +135,7 @@ def send_pending(state: dict, notifier, cfg: dict, now_ns: int, save=None) -> in
                 s["notified_close"] = True
                 sent += 1
                 if save:
-                    save()
+                    save(True)
     return sent
 
 
@@ -151,13 +152,37 @@ def alert_error(state: dict, notifier, cfg: dict, msg: str, now_ns: int) -> bool
     return False
 
 
+def heartbeat(state: dict, notifier, cfg: dict, now_ns: int) -> bool:
+    """দিনে একবার "সিস্টেম সচল" বার্তা। এটা না এলে বুঝবেন cron বা workflow বন্ধ।"""
+    ts = pd.Timestamp(now_ns, tz="UTC")
+    today = ts.strftime("%Y-%m-%d")
+    if ts.hour < cfg["heartbeat"]["daily_utc_hour"] or state.get("last_heartbeat") == today:
+        return False
+    closed = [float(s["result_r"]) for s in state["signals"] if s["status"] in ("TP", "SL")]
+    running = sum(1 for s in state["signals"] if s["status"] == "Running")
+    last = max((p.get("last_candle") for p in state.get("pairs", {}).values() if p.get("last_candle")), default=iso(now_ns))
+    if notifier.send(format_heartbeat(running, len(closed), sum(closed), last, cfg)):
+        state["last_heartbeat"] = today
+        return True
+    return False
+
+
 def run_once(cfg: dict, h1_by_pair: dict, errors: dict, state: dict, notifier, now: datetime | None = None, save=None) -> dict:
-    """এক রান। h1_by_pair: {পেয়ার: পরিষ্কার ক্লোজড H1}, errors: {পেয়ার: বার্তা}। state জায়গায় বদলায়।"""
+    """এক রান। h1_by_pair: {পেয়ার: পরিষ্কার ক্লোজড H1}, errors: {পেয়ার: বার্তা}। state জায়গায় বদলায়।
+
+    save(after_send: bool): সংরক্ষণ। Telegram-এর আগে (False) ব্যর্থ হলে রান থামে; পরে (True) ব্যর্থ হলে শুধু সতর্কতা।
+    """
     now = now or datetime.now(timezone.utc)
     now_ns = int(pd.Timestamp(now).value)
     report = {"new": 0, "closed": 0, "sent": 0, "errors": len(errors)}
+    prev = state.get("last_check")
+    if prev:
+        gap_h = (now_ns - to_ns(prev)) / 3.6e12
+        if gap_h > cfg["heartbeat"]["stale_after_hours"]:
+            alert_error(state, notifier, cfg, f"রান বিরতি: শেষ রানের পর প্রায় {int(gap_h)} ঘণ্টা কেটেছে (সীমা {cfg['heartbeat']['stale_after_hours']})", now_ns)
     for pair, msg in errors.items():
         alert_error(state, notifier, cfg, f"{pair}: ডেটা আনা যায়নি, এই রানে সিগন্যাল তৈরি হয়নি ({msg})", now_ns)
+    state.setdefault("pairs", {})
     for pair, h1 in h1_by_pair.items():
         try:
             frames = build_frames(h1, cfg, now)
@@ -167,8 +192,16 @@ def run_once(cfg: dict, h1_by_pair: dict, errors: dict, state: dict, notifier, n
             continue
         report["closed"] += len(track_running(state, frames["H1"], cfg, now_ns))   # আগে ট্র্যাকিং, তারপর নতুন
         report["new"] += len(new_signals(state, pair, frames, cfg, now_ns))
+        d1 = frames["D1"]
+        tr = trend_direction(d1, len(d1) - 1, cfg) if len(d1) else None
+        state["pairs"][pair] = {"d1_trend": tr or "NONE", "last_candle": iso(int(frames["H1"].end_ns[-1])),
+                                "running_signal": any(s["pair"] == pair and s["status"] == "Running" for s in state["signals"])}
     state["last_check"] = iso(now_ns)
     if save:
-        save()                       # আগে সিগন্যাল সংরক্ষণ, তারপর Telegram: ক্র্যাশ হলেও সিগন্যাল হারায় না, ডুপ্লিকেটও হয় না
+        save(False)                  # আগে সিগন্যাল সংরক্ষণ, তারপর Telegram: ক্র্যাশ হলেও সিগন্যাল হারায় না, ডুপ্লিকেটও হয় না
     report["sent"] = send_pending(state, notifier, cfg, now_ns, save)
+    if heartbeat(state, notifier, cfg, now_ns):
+        report["sent"] += 1
+    if save:
+        save(True)
     return report

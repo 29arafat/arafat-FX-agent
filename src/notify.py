@@ -56,6 +56,13 @@ def format_error(msg: str) -> str:
     return f"⚠️ সিস্টেম সতর্কতা\n{msg[:300]}"
 
 
+def format_heartbeat(running: int, closed: int, total_r: float, last_candle_iso: str, cfg: dict) -> str:
+    off = cfg["notify"]["display_utc_offset_hours"]
+    return (f"💚 সিস্টেম সচল ({cfg['strategy']['version']})\n"
+            f"শেষ ডেটা: {fmt_time(last_candle_iso, off)} (সৌদি)\n"
+            f"চলমান: {running} · বন্ধ: {closed} · মোট {total_r:+.1f}R")
+
+
 def error_key(msg: str) -> str:
     return hashlib.sha1(msg.encode("utf-8")).hexdigest()[:12]
 

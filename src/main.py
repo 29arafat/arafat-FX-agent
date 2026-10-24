@@ -15,6 +15,7 @@ import sys
 from .engine import run_once
 from .fetch import clean, fetch_all, load_config, utcnow
 from .notify import DryRun, Telegram
+from .datastore import DataStore
 from .storage import load_state, save_state
 
 
@@ -22,6 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="সিগন্যাল ইঞ্জিন")
     ap.add_argument("--once", action="store_true", help="একবার চালাও")
     ap.add_argument("--send", action="store_true", help="আসল Telegram-এ পাঠাও (না দিলে ড্রাই-রান)")
+    ap.add_argument("--publish", metavar="DIR", help="data ব্রাঞ্চের ফোল্ডার: state ও JSON লিখে কমিট+পুশ করে (Actions-এর জন্য)")
+    ap.add_argument("--alert", metavar="TEXT", help="একটা সতর্কবার্তা পাঠাও (workflow ব্যর্থ হলে)")
     ap.add_argument("--test-telegram", action="store_true", help="একটা পরীক্ষার বার্তা পাঠাও")
     args = ap.parse_args(argv)
     cfg = load_config()
@@ -34,6 +37,14 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         ok = tg.send("✅ পরীক্ষা: Telegram সংযোগ ঠিক আছে (arafat-FX-agent)")
         print("পাঠানো হয়েছে" if ok else f"ব্যর্থ: {tg.last_error}")
+        return 0 if ok else 1
+
+    if args.alert:
+        try:
+            ok = Telegram.from_env().send(f"⚠️ সিস্টেম সতর্কতা\n{args.alert[:300]}")
+        except RuntimeError as e:
+            print(f"ত্রুটি: {e}", file=sys.stderr)
+            return 2
         return 0 if ok else 1
 
     if not args.once:
@@ -49,14 +60,27 @@ def main(argv: list[str] | None = None) -> int:
     except RuntimeError as e:
         print(f"ত্রুটি: {e}", file=sys.stderr)
         return 2
-    path = cfg["storage"]["state_file"]
+    store = DataStore(args.publish) if args.publish else None
+    path = str(store.state_path) if store else cfg["storage"]["state_file"]
+
+    def save(after_send: bool = False) -> None:
+        if store:
+            try:
+                store.write(state, cfg)
+                store.commit_push(f"data: {state.get('last_check')}")
+            except Exception as e:
+                if not after_send:
+                    raise                      # Telegram-এর আগে সংরক্ষণ না হলে থামি, ডুপ্লিকেট এড়াতে
+                print(f"সতর্কতা: বার্তা পাঠানোর পর সংরক্ষণ ব্যর্থ ({clean(str(e), key)[:150]})", file=sys.stderr)
+        else:
+            save_state(path, state)
+
     try:
         state = load_state(path)
         now = utcnow()
         data, errors, thr = fetch_all(cfg, key, now=now, due=["H1", "H4", "D1"])
         h1 = {p: v["H1"] for p, v in data.items()}
-        report = run_once(cfg, h1, errors, state, notifier, now, save=lambda: save_state(path, state))
-        save_state(path, state)
+        report = run_once(cfg, h1, errors, state, notifier, now, save=save)
     except Exception as e:  # কখনো Key ফাঁস করবে না
         print(f"ত্রুটি: {type(e).__name__}: {clean(str(e), key)}"[:500], file=sys.stderr)
         return 1

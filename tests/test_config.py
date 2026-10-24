@@ -51,3 +51,18 @@ def test_data_quality_settings():
     assert d["drop_flat_candles"] is True and d["drop_weekend_candles"] is True
     assert d["weekend"]["close"]["weekday"] < d["weekend"]["open"]["weekday"]
     assert d["d1_h1_bars"] <= 10000 and "h4_bars" not in d
+
+
+def test_workflows_are_valid_yaml_and_safe():
+    import glob
+    files = glob.glob(str(ROOT / ".github" / "workflows" / "*.yml"))
+    assert len(files) >= 4
+    for f in files:
+        text = Path(f).read_text(encoding="utf-8")
+        wf = yaml.safe_load(text)
+        assert "jobs" in wf and (wf.get("on") or wf.get(True)), f
+        assert "secrets.GITHUB" not in text
+        assert not re.search(r"\d{8,}:[A-Za-z0-9_-]{20,}", text)
+    sig = yaml.safe_load((ROOT / ".github" / "workflows" / "signals.yml").read_text(encoding="utf-8"))
+    assert sig["permissions"]["contents"] == "write" and sig["concurrency"]["cancel-in-progress"] is False
+    assert any("cron" in s for s in sig[True if True in sig else "on"]["schedule"])

@@ -17,6 +17,8 @@ from src.strategy import build_frames, evaluate
 from tests.test_backtest import synth
 
 CFG = load_config()
+CFG["heartbeat"]["daily_utc_hour"] = 99        # বেশির ভাগ টেস্টে হার্টবিট/বিরতি-সতর্কতা বন্ধ; নিচে আলাদা টেস্ট আছে
+CFG["heartbeat"]["stale_after_hours"] = 9999
 LATE = datetime(2030, 1, 1, tzinfo=timezone.utc)
 
 
@@ -269,10 +271,153 @@ def test_save_called_before_send():
             order.append("send")
             return super().send(text)
 
-    E.run_once(CFG, {"XAUUSD": clean(truncate(df, now), now)}, {}, st, Spy(), now, save=lambda: order.append("save"))
+    E.run_once(CFG, {"XAUUSD": clean(truncate(df, now), now)}, {}, st, Spy(), now, save=lambda *a: order.append("save"))
     assert order.index("save") < order.index("send")
 
 
 def test_friday_cutoff_and_disabled_pairs():
     assert [p for p, v in CFG["pairs"].items() if v["enabled"]] == ["XAUUSD"]
     assert CFG["scoring"]["required"] == ["clear_trend", "pullback_zone"] and CFG["scoring"]["threshold"] == 4
+
+
+# ---------- ধাপ ৫: হার্টবিট, বিরতি, status, stats, datastore ----------
+def test_daily_heartbeat_once_per_day_and_gap_alert():
+    cfg = copy.deepcopy(CFG)
+    cfg["heartbeat"].update(daily_utc_hour=5, stale_after_hours=3)
+    st, nt = fresh_state(), Fake()
+    t0 = datetime(2026, 10, 23, 4, tzinfo=timezone.utc)            # ০৫:০০-এর আগে → হার্টবিট নয়
+    E.run_once(cfg, {}, {}, st, nt, t0)
+    assert nt.sent == []
+    t1 = datetime(2026, 10, 23, 5, 7, tzinfo=timezone.utc)
+    E.run_once(cfg, {}, {}, st, nt, t1)
+    assert len(nt.sent) == 1 and "সিস্টেম সচল" in nt.sent[0]       # ১ ঘণ্টা ৭ মিনিট ফাঁক সীমার মধ্যে: শুধু হার্টবিট
+    n = len(nt.sent)
+    E.run_once(cfg, {}, {}, st, nt, datetime(2026, 10, 23, 6, 7, tzinfo=timezone.utc))
+    assert len(nt.sent) == n                                          # একই দিনে আবার নয়
+    E.run_once(cfg, {}, {}, st, nt, datetime(2026, 10, 23, 12, 7, tzinfo=timezone.utc))     # ৬ ঘণ্টা বিরতি
+    assert any("রান বিরতি" in m for m in nt.sent)
+    E.run_once(cfg, {}, {}, st, nt, datetime(2026, 10, 24, 5, 7, tzinfo=timezone.utc))
+    assert sum("সিস্টেম সচল" in m for m in nt.sent) == 2             # পরের দিন আবার
+
+
+def test_status_has_d1_trend_and_no_price():
+    df = gold()
+    i, now = first_live_signal(df)
+    st = fresh_state()
+    E.run_once(CFG, {"XAUUSD": clean(truncate(df, now), now)}, {}, st, Fake(), now)
+    p = st["pairs"]["XAUUSD"]
+    assert p["d1_trend"] in ("BUY", "SELL", "NONE") and p["running_signal"] is True and p["last_candle"].endswith("Z")
+    assert "last_price" not in p
+
+
+def test_build_stats():
+    from src.stats import build_stats
+    sigs = [
+        {"id": "a", "pair": "XAUUSD", "timeframe": "H1", "status": "TP", "closed_at": "2026-10-20T10:00:00Z", "result_r": 2.0, "ambiguous": False},
+        {"id": "b", "pair": "XAUUSD", "timeframe": "H4", "status": "SL", "closed_at": "2026-10-22T10:00:00Z", "result_r": -1.0, "ambiguous": True},
+        {"id": "c", "pair": "XAUUSD", "timeframe": "H1", "status": "Running", "closed_at": None, "result_r": 0, "ambiguous": False},
+        {"id": "d", "pair": "XAUUSD", "timeframe": "H1", "status": "SL", "closed_at": "2026-08-01T10:00:00Z", "result_r": -1.0, "ambiguous": False},
+    ]
+    st = build_stats(sigs, "2026-10-23T00:00:00Z", "v1", 30)
+    assert st["running"] == 1 and st["overall"]["trades"] == 3 and abs(st["overall"]["total_r"]) < 1e-9
+    assert st["last_7d"]["trades"] == 2 and st["last_30d"]["trades"] == 2
+    assert st["by_timeframe"]["H1"]["trades"] == 2 and st["by_timeframe"]["D1"]["trades"] == 0
+    assert [e["r"] for e in st["equity"]] == [-1.0, 1.0, 0.0] and st["overall"]["ambiguous"] == 1
+
+
+def _git(cwd, *a):
+    import subprocess
+    r = subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=cwd, capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return r.stdout
+
+
+def _remote(tmp):
+    """একটা bare রিমোট + তাতে খালি 'data' ব্রাঞ্চ + একটা ক্লোন।"""
+    bare = Path(tmp) / "origin.git"
+    _git(tmp, "init", "-q", "--bare", "-b", "data", str(bare))
+    seed = Path(tmp) / "seed"
+    seed.mkdir()
+    _git(seed, "init", "-q", "-b", "data")
+    (seed / "README.md").write_text("data")
+    _git(seed, "add", "-A")
+    _git(seed, "commit", "-q", "-m", "init")
+    _git(seed, "push", "-q", str(bare), "data")
+    clone = Path(tmp) / "data"
+    _git(tmp, "clone", "-q", "-b", "data", str(bare), str(clone))
+    return bare, clone
+
+
+def test_datastore_writes_public_files_and_pushes():
+    from src.datastore import DataStore, PUBLIC_FIELDS
+    df = gold()
+    i, now = first_live_signal(df)
+    with tempfile.TemporaryDirectory() as tmp:
+        bare, clone = _remote(tmp)
+        ds = DataStore(clone)
+        st = ds.state_path
+        state = fresh_state()
+        E.run_once(CFG, {"XAUUSD": clean(truncate(df, now), now)}, {}, state, Fake(), now,
+                   save=lambda after=False: (ds.write(state, CFG), ds.commit_push("data: test")))
+        sig = json.loads((clone / "signals.json").read_text())
+        assert len(sig) == 1 and set(sig[0]) == set(PUBLIC_FIELDS) and "key" not in sig[0] and "notified_open" not in sig[0]
+        status = json.loads((clone / "status.json").read_text())
+        assert status["pairs"]["XAUUSD"]["running_signal"] is True and "last_price" not in json.dumps(status)
+        assert json.loads((clone / "stats.json").read_text())["running"] == 1
+        assert json.loads(st.read_text())["signals"][0]["notified_open"] is True      # state-এ ফ্ল্যাগ আছে
+        # রিমোটে সত্যিই পৌঁছেছে
+        check = Path(tmp) / "check"
+        _git(tmp, "clone", "-q", "-b", "data", str(bare), str(check))
+        assert (check / "signals.json").exists() and (check / "state.json").exists()
+        # পরিবর্তন না থাকলে নতুন কমিট নয়
+        n1 = _git(clone, "rev-list", "--count", "HEAD").strip()
+        assert ds.commit_push("again") is True and _git(clone, "rev-list", "--count", "HEAD").strip() == n1
+
+
+def test_datastore_rebases_when_remote_moved_and_fails_loudly():
+    from src.datastore import DataStore
+    with tempfile.TemporaryDirectory() as tmp:
+        bare, clone = _remote(tmp)
+        other = Path(tmp) / "other"
+        _git(tmp, "clone", "-q", "-b", "data", str(bare), str(other))
+        (other / "x.txt").write_text("1")
+        _git(other, "add", "-A")
+        _git(other, "commit", "-q", "-m", "x")
+        _git(other, "push", "-q", "origin", "data")
+        ds = DataStore(clone)
+        ds.write(fresh_state() | {"last_check": "2026-10-23T00:00:00Z"}, CFG)
+        assert ds.commit_push("mine") is True                    # পিছিয়ে ছিল, rebase করে পুশ
+        assert (clone / "x.txt").exists()
+        _git(clone, "remote", "set-url", "origin", str(Path(tmp) / "nope.git"))
+        (clone / "y.txt").write_text("2")
+        try:
+            ds.commit_push("fails", retries=1)
+            raise AssertionError("ত্রুটি ওঠেনি")
+        except RuntimeError:
+            pass
+
+
+def test_main_publish_end_to_end_with_patched_fetch():
+    import os
+    import src.main as M
+    from src.fetch import Throttle
+    df = gold()
+    i, now = first_live_signal(df)
+    h1 = clean(truncate(df, now), now)
+    with tempfile.TemporaryDirectory() as tmp:
+        bare, clone = _remote(tmp)
+        orig_fetch, orig_now, orig_cfg = M.fetch_all, M.utcnow, M.load_config
+        M.fetch_all = lambda cfg, key, now=None, due=None, **k: ({"XAUUSD": {"H1": h1}}, {}, Throttle(0))
+        M.utcnow = lambda: now
+        M.load_config = lambda: CFG
+        os.environ["PRICE_API_KEY"] = "dummy"
+        try:
+            assert M.main(["--once", "--publish", str(clone)]) == 0
+            assert M.main(["--once", "--publish", str(clone)]) == 0            # দ্বিতীয়বারে ডুপ্লিকেট নয়
+        finally:
+            M.fetch_all, M.utcnow, M.load_config = orig_fetch, orig_now, orig_cfg
+            os.environ.pop("PRICE_API_KEY", None)
+        assert len(json.loads((clone / "signals.json").read_text())) == 1
+        check = Path(tmp) / "check"
+        _git(tmp, "clone", "-q", "-b", "data", str(bare), str(check))
+        assert len(json.loads((check / "signals.json").read_text())) == 1

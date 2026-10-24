@@ -31,4 +31,8 @@
   (প্রাথমিক, টিউন করা নয়); দুই পাস gross/net; IS ৭০%/OOS ৩০%; look-ahead replay টেস্ট; ৫৯ টেস্ট স্যান্ডবক্সে পাস
 - ধাপ ৩ শেষ: ফল নিয়ে সিদ্ধান্ত: strategy v1-experimental = V2 (required [clear_trend, pullback_zone], threshold ৪), শুধু XAUUSD
 - ধাপ ৪ কোড (step4-engine.zip): engine.py (নতুন সিগন্যাল, TP/SL ট্র্যাকিং, নিয়ম), notify.py (Telegram), storage.py (লোকাল state), main.py (--once/--send/--test-telegram)
-- পরের পদক্ষেপ: ধাপ ৪ লোকাল পরীক্ষা (test-telegram, ড্রাই-রান), তারপর ধাপ ৫ (stats, data ব্রাঞ্চ, Actions-এ স্বয়ংক্রিয়, heartbeat)
+- ধাপ ৫ কোড (step5-publish.zip, ধাপ ৪ সহ): datastore.py (data ব্রাঞ্চে কমিট/পুশ, rebase), stats.build_stats, status.json (d1_trend, running_signal, last_candle), হার্টবিট (দৈনিক সচল-বার্তা, বিরতি-সতর্কতা), signals.yml (cron, data ব্রাঞ্চ checkout, --publish data, failure alert), tests.yml
+- সিদ্ধান্ত: পাবলিক JSON-এ last_price নেই (Twelve Data শর্ত); সংরক্ষণ Telegram-এর আগে (ক্র্যাশে ডুপ্লিকেট নয়, push ব্যর্থ হলে রান থামে)
+- ৬০ দিনের নিয়ম: নথি বলে পাবলিক রিপোতে "কার্যকলাপ" না থাকলে schedule বন্ধ; কার্যকলাপের সংজ্ঞা নেই → মাসিক ম্যানুয়াল কমিট + দৈনিক সচল-বার্তা
+- Actions চালু হলে পিসি থেকে --send নয় (state আলাদা)
+- পরের পদক্ষেপ: ব্যবহারকারী zip বসাবে, লোকাল ড্রাই-রান, Actions-এ workflow_dispatch পরীক্ষা, তারপর ধাপ ৬ (PWA)

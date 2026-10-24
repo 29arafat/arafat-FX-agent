@@ -1,11 +1,12 @@
 name: signals
 
-# কঙ্কাল (ধাপ ১): এখন শুধু পরিবেশ ও Secrets-এর উপস্থিতি যাচাই করে।
-# সিগন্যাল ইঞ্জিন ধাপ ৫-এ যোগ হবে।
+# প্রতি ঘণ্টার ৭ মিনিটে: ডেটা আনে → সিগন্যাল খোঁজে → Telegram → data ব্রাঞ্চে JSON কমিট।
+# পরীক্ষা (pytest) আলাদা workflow-এ (tests.yml), যাতে সিগন্যাল চালানো দ্রুত ও নির্ভরযোগ্য থাকে।
+# সতর্কতা: এই workflow চালু থাকলে আপনার পিসি থেকে `--send` চালাবেন না (দুই জায়গার state আলাদা, ডুপ্লিকেট বার্তা যাবে)।
 
 on:
   schedule:
-    - cron: "7 * * * *"      # প্রতি ঘণ্টার ৭ মিনিটে (UTC); বিজোড় মিনিট ভিড় এড়ায়
+    - cron: "7 * * * *"      # বিজোড় মিনিট ভিড় এড়ায়
   workflow_dispatch:
 
 concurrency:
@@ -13,33 +14,48 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write            # data ব্রাঞ্চে কমিটের জন্য
 
 jobs:
   run:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    permissions:
-      contents: write        # data ব্রাঞ্চে কমিটের জন্য (ধাপ ৫ থেকে)
     steps:
       - uses: actions/checkout@v6
 
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run tests
-        run: python -m pytest -q
+      - name: Ensure data branch exists
+        run: |
+          if ! git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            empty=$(git hash-object -t tree /dev/null)
+            c=$(git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit-tree "$empty" -m "init data branch")
+            git push origin "$c:refs/heads/data"
+          fi
 
-      - name: Check secrets are present (values are never printed)
+      - name: Checkout data branch
+        uses: actions/checkout@v6
+        with:
+          ref: data
+          path: data
+
+      - name: Run signal engine
+        env:
+          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m src.main --once --send --publish data
+
+      - name: Alert on failure
+        if: failure()
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
         run: |
-          for n in TELEGRAM_TOKEN TELEGRAM_CHAT_ID PRICE_API_KEY; do
-            if [ -n "${!n}" ]; then echo "$n: set"; else echo "$n: MISSING"; exit 1; fi
-          done
+          python -m src.main --alert "signals workflow ব্যর্থ হয়েছে। লগ: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
