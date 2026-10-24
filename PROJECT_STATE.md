@@ -29,4 +29,6 @@
 - ধাপ ৩ কোড তৈরি (step3-backtest.zip): strategy.py (Frame/evaluate, tf_map H1:D1→H4→H1, H4:D1→H4→H4, D1 নিজে),
   tracker.py, stats.py, backtest/backtest.py, fetch_h1_history, clean_h1; স্কোর required [ট্রেন্ড, পুলব্যাক, কনফার্মেশন] + threshold ৭
   (প্রাথমিক, টিউন করা নয়); দুই পাস gross/net; IS ৭০%/OOS ৩০%; look-ahead replay টেস্ট; ৫৯ টেস্ট স্যান্ডবক্সে পাস
-- পরের পদক্ষেপ: apply zip → `python -m backtest.backtest --years 3` চালিয়ে report.md ফল জানানো; স্প্রেড ও ফল দেখে ধাপ ৩ শেষ, তারপর ধাপ ৪
+- ধাপ ৩ শেষ: ফল নিয়ে সিদ্ধান্ত: strategy v1-experimental = V2 (required [clear_trend, pullback_zone], threshold ৪), শুধু XAUUSD
+- ধাপ ৪ কোড (step4-engine.zip): engine.py (নতুন সিগন্যাল, TP/SL ট্র্যাকিং, নিয়ম), notify.py (Telegram), storage.py (লোকাল state), main.py (--once/--send/--test-telegram)
+- পরের পদক্ষেপ: ধাপ ৪ লোকাল পরীক্ষা (test-telegram, ড্রাই-রান), তারপর ধাপ ৫ (stats, data ব্রাঞ্চ, Actions-এ স্বয়ংক্রিয়, heartbeat)

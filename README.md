@@ -65,7 +65,7 @@ PROJECT_STATE.md       প্রজেক্টের বর্তমান অ�
 আউটপুটে প্রতি পেয়ারে H1, H4 (শেষ ২টা) ও D1 (শেষ ৩টা) ক্যান্ডেল আসে।
 
 ## ধাপের অবস্থা
-০ ✅ সেটআপ · ১ ✅ কাঠামো · ২ ✅ ডেটা ও ইন্ডিকেটর · ৩ ব্যাকটেস্ট (কোড তৈরি, ফল দেখা বাকি) · ৪ সিগন্যাল · ৫ ট্র্যাকিং · ৬ অ্যাপ · ৭ ডিপ্লয় · ৮ লাইভ টেস্ট
+০ ✅ সেটআপ · ১ ✅ কাঠামো · ২ ✅ ডেটা ও ইন্ডিকেটর · ৩ ✅ ব্যাকটেস্ট · ৪ সিগন্যাল ইঞ্জিন ও Telegram (লোকাল রান) · ৫ ট্র্যাকিং ও data ব্রাঞ্চ · ৬ অ্যাপ · ৭ ডিপ্লয় · ৮ লাইভ টেস্ট
 
 ## ব্যাকটেস্ট (ধাপ ৩)
 
@@ -78,4 +78,16 @@ python -m backtest.backtest --refresh            # ক্যাশ ফেলে 
 - ফল: `backtest/output/report.md` (বাংলা রিপোর্ট) ও `summary.json`। ইতিহাস `backtest/cache/`-এ জমে, পরের বার API লাগে না।
 - GitHub-এ চালাতে: Actions → backtest → Run workflow (রিপোর্টে কোনো কাঁচা দাম নেই)।
 - স্প্রেড `config.yaml → backtest.spread`-এ। এগুলো প্রাথমিক অনুমান; Exness-এর আসল স্প্রেড দিলে বসানো হবে।
+
+## সিগন্যাল ইঞ্জিন (ধাপ ৪)
+
+কৌশল: `strategy.version` (v1-experimental), শুধু XAUUSD। রান:
+```
+python -m src.main --test-telegram        # Telegram সংযোগ পরীক্ষা (TELEGRAM_TOKEN, TELEGRAM_CHAT_ID লাগে)
+python -m src.main --once                 # ড্রাই-রান: বার্তা শুধু টার্মিনালে
+python -m src.main --once --send          # আসল Telegram-এ
+```
+- Windows PowerShell: `$env:PRICE_API_KEY='…'`, `$env:TELEGRAM_TOKEN='…'`, `$env:TELEGRAM_CHAT_ID='…'` (একই জানালায়; এগুলো কোথাও কমিট করবেন না)।
+- অবস্থা `state/signals.json`-এ (লোকাল, gitignored)। একই ক্যান্ডেলের সিগন্যাল দুবার যায় না।
+- GitHub Actions-এ স্বয়ংক্রিয় চালানো ধাপ ৫-এ (state `data` ব্রাঞ্চে গেলে)। তার আগে `signals.yml` শুধু পরীক্ষা চালায়।
 

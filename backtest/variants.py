@@ -1,7 +1,7 @@
 """ধাপ ৩খ: আগে-ঘোষিত কয়েকটি সরল রূপ (ablation), বুটস্ট্র্যাপ ভরসা-সীমা ও বছরভিত্তিক (walk-forward) ফল।
 
 রূপগুলো এই ফাইলে আগে থেকে লেখা, ফল দেখে বদলানো হয় না। মোট ৪টি রূপ × ৩ টাইমফ্রেম = ১২টি তুলনা:
-  V0 বর্তমান নিয়ম | V1 পুলব্যাক বাদ | V2 কনফার্মেশন বাদ | V3 শুধু ট্রেন্ড
+  V0 পুরনো নিয়ম (৩ শর্ত) | V1 পুলব্যাক বাদ | V2 কনফার্মেশন বাদ | V3 শুধু ট্রেন্ড
 অনেক তুলনায় কোনো একটা ভাগ্যক্রমে ভালো দেখাবেই (multiple testing), তাই বিজয়ী বাছতে শুধু গড় নয়,
 ৯৫% ভরসা-সীমার নিচের প্রান্ত ও বছরগুলোর সামঞ্জস্য দেখা হয়।
 
@@ -22,7 +22,7 @@ from src.stats import summarize
 from src.strategy import build_frames
 
 VARIANTS = {
-    "V0 বর্তমান নিয়ম": {"required": ["clear_trend", "pullback_zone", "confirmation"], "threshold": 7},
+    "V0 পুরনো নিয়ম (৩ শর্ত)": {"required": ["clear_trend", "pullback_zone", "confirmation"], "threshold": 7},
     "V1 পুলব্যাক বাদ": {"required": ["clear_trend", "confirmation"], "threshold": 4},
     "V2 কনফার্মেশন বাদ": {"required": ["clear_trend", "pullback_zone"], "threshold": 4},
     "V3 শুধু ট্রেন্ড": {"required": ["clear_trend"], "threshold": 2},

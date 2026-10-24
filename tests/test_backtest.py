@@ -1,4 +1,5 @@
 """ধাপ ৩: কৃত্রিম ডেটায় stats, tracker, strategy (ভবিষ্যৎ-দেখা নেই), simulate, fetch_h1_history।"""
+import copy
 import re
 from datetime import datetime, timezone
 
@@ -259,9 +260,10 @@ def test_bootstrap_ci():
 def test_variants_override_and_more_trades_when_looser():
     from backtest import variants as V
     cfg = load_config()
-    c0 = V.with_variant(cfg, V.VARIANTS["V0 বর্তমান নিয়ম"])
+    before = copy.deepcopy(cfg)
+    c0 = V.with_variant(cfg, V.VARIANTS["V0 পুরনো নিয়ম (৩ শর্ত)"])
     c3 = V.with_variant(cfg, V.VARIANTS["V3 শুধু ট্রেন্ড"])
-    assert cfg["scoring"]["required"] == c0["scoring"]["required"]      # মূল কনফিগ অক্ষত
+    assert cfg == before and c0["scoring"]["required"] == ["clear_trend", "pullback_zone", "confirmation"]  # মূল কনফিগ অক্ষত
     assert c3["scoring"]["required"] == ["clear_trend"]
     fr = build_frames(synth(), cfg, NOW)
     n0 = len(B.simulate("EURUSD", "H1", fr, c0, 0.0)["trades"])

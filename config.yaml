@@ -26,13 +26,13 @@ api_limits:                   # Twelve Data ফ্রি (২০২৬-১০-�
   credits_per_day: 800
   sleep_between_requests_seconds: 8
 
-pairs:
+pairs:                        # সিদ্ধান্ত (ধাপ ৩খ): এখন শুধু XAUUSD; ফরেক্স পরে আলাদা কৌশলে
   XAUUSD: {symbol: "XAU/USD", decimals: 2, enabled: true}
-  EURUSD: {symbol: "EUR/USD", decimals: 5, enabled: true}
-  GBPUSD: {symbol: "GBP/USD", decimals: 5, enabled: true}
-  USDJPY: {symbol: "USD/JPY", decimals: 3, enabled: true}
-  AUDUSD: {symbol: "AUD/USD", decimals: 5, enabled: true}
-  USDCAD: {symbol: "USD/CAD", decimals: 5, enabled: true}
+  EURUSD: {symbol: "EUR/USD", decimals: 5, enabled: false}
+  GBPUSD: {symbol: "GBP/USD", decimals: 5, enabled: false}
+  USDJPY: {symbol: "USD/JPY", decimals: 3, enabled: false}
+  AUDUSD: {symbol: "AUD/USD", decimals: 5, enabled: false}
+  USDCAD: {symbol: "USD/CAD", decimals: 5, enabled: false}
 
 timeframes: [H1, H4, D1]      # প্রতিটির স্বতন্ত্র সিগন্যাল
 
@@ -53,10 +53,12 @@ scoring:                      # প্রাথমিক অনুমান, ধ
     confirmation: 2
     rsi_state: 1
     no_opposing_level: 1
-  required: [clear_trend, pullback_zone, confirmation]   # এই তিনটি বাধ্যতামূলক (স্কোর দিয়ে পূরণ হয় না)
-  threshold: 7                # স্কোর ≥ এই সংখ্যা হলে সিগন্যাল (প্রাথমিক অনুমান)
+  required: [clear_trend, pullback_zone]   # বাধ্যতামূলক (v1: কনফার্মেশন ঐচ্ছিক, থাকলে স্কোর বেশি = "কনফার্মড")
+  threshold: 4                # স্কোর ≥ এই সংখ্যা (clear_trend ২ + pullback_zone ২ = ৪)
 
 strategy:                     # সবই প্রাথমিক খসড়া। ব্যাকটেস্ট দেখে ভালো দেখানোর জন্য টিউন করা হবে না
+  version: "v1-experimental"   # প্রতিটি সিগন্যালে লেখা হয়; ২০-৩০ সিগন্যালের আগে নিয়ম বদলাব না
+  confirmed_min_score: 6      # স্কোর ≥ এটা হলে বার্তায় "কনফার্মড"
   tf_map:                     # কোন সিগন্যাল-টাইমফ্রেমে কোন ফ্রেম কী কাজে লাগে
     H1: {trend: D1, setup: H4, trigger: H1}
     H4: {trend: D1, setup: H4, trigger: H4}
@@ -85,6 +87,7 @@ rules:
   friday_cutoff_utc: "18:00"  # শুক্রবার এর পর নতুন সিগন্যাল নয়
   tracking_timeframe: H1      # সব সিগন্যাল H1 ক্যান্ডেলে ট্র্যাক হবে
   ambiguous_rule: SL          # একই ক্যান্ডেলে দুটোই ছুঁলে SL
+  max_signal_age_minutes: {H1: 90, H4: 150, D1: 240}   # এর চেয়ে পুরনো ক্যান্ডেলে নতুন সিগন্যাল পাঠানো হয় না (দেরিতে এন্ট্রি এড়াতে)
 
 backtest:
   oos_fraction: 0.3           # শেষ ৩০% ডেটা শুধু যাচাইয়ের জন্য, টিউনিংয়ে নয়
@@ -104,6 +107,10 @@ backtest:
 notify:
   telegram_enabled: true
   same_error_cooldown_hours: 6
+  display_utc_offset_hours: 3   # বার্তার সময় সৌদি (Asia/Riyadh = UTC+3, কোনো DST নেই)
+
+storage:
+  state_file: state/signals.json   # ধাপ ৪: লোকাল ফাইল (gitignored); ধাপ ৫-এ data ব্রাঞ্চে সরবে
 
 heartbeat:                    # ধাপ ৫-এ পূর্ণ হবে (অচলতার সতর্কতা)
   stale_after_hours: 3
