@@ -242,3 +242,35 @@ def test_diagnose_runs_and_baselines_sane():
         assert y["t"] >= x["exit_t"]
     t = D.baseline("EURUSD", "H1", fr, cfg, 0.0, "trend", 1)
     assert len(t) > 5
+
+
+# ---------- রূপ-তুলনা ----------
+def test_bootstrap_ci():
+    from backtest import variants as V
+    rs = [2.0] * 40 + [-1.0] * 60
+    lo, hi = V.bootstrap_ci(rs, 2000, 1)
+    m = sum(rs) / len(rs)
+    assert lo < m < hi and V.bootstrap_ci(rs, 2000, 1) == (lo, hi)
+    assert all(x != x for x in V.bootstrap_ci([1.0]))
+    dl, dh = V.diff_ci([2.0] * 50, [-1.0] * 50, 1000, 1)
+    assert dl > 2.5 and dh < 3.5
+
+
+def test_variants_override_and_more_trades_when_looser():
+    from backtest import variants as V
+    cfg = load_config()
+    c0 = V.with_variant(cfg, V.VARIANTS["V0 বর্তমান নিয়ম"])
+    c3 = V.with_variant(cfg, V.VARIANTS["V3 শুধু ট্রেন্ড"])
+    assert cfg["scoring"]["required"] == c0["scoring"]["required"]      # মূল কনফিগ অক্ষত
+    assert c3["scoring"]["required"] == ["clear_trend"]
+    fr = build_frames(synth(), cfg, NOW)
+    n0 = len(B.simulate("EURUSD", "H1", fr, c0, 0.0)["trades"])
+    n3 = len(B.simulate("EURUSD", "H1", fr, c3, 0.0)["trades"])
+    assert n3 > n0
+
+
+def test_variants_report():
+    from backtest import variants as V
+    rep = V.run("EURUSD", synth(), load_config(), NOW)
+    assert "V3 শুধু ট্রেন্ড" in rep and "ধনাত্মক বছর" in rep and "## D1" in rep
+    assert re.search(r"\d\.\d{4,}", rep) is None
