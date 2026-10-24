@@ -26,4 +26,7 @@
   h1_bars ৩৫০০, d1_h1_bars ৯০০০। বাকি: নতুন --check-এ D1 ~২৬০-২৯০ আসে কিনা দেখা
 - জানা: XAUUSD H1 আসল Key-তে কাজ করে; ফরেক্স পেয়ার ও নতুন H1-ভিত্তিক --check আসল ডেটায় যাচাই বাকি
 - Codespaces-এ Key: export PRICE_API_KEY='…' (এক লাইনে); স্থায়ী: Codespaces Secret
-- পরের পদক্ষেপ: `python -m src.fetch --check` ফল জানানো, তারপর ধাপ ৩ (ব্যাকটেস্ট)
+- ধাপ ৩ কোড তৈরি (step3-backtest.zip): strategy.py (Frame/evaluate, tf_map H1:D1→H4→H1, H4:D1→H4→H4, D1 নিজে),
+  tracker.py, stats.py, backtest/backtest.py, fetch_h1_history, clean_h1; স্কোর required [ট্রেন্ড, পুলব্যাক, কনফার্মেশন] + threshold ৭
+  (প্রাথমিক, টিউন করা নয়); দুই পাস gross/net; IS ৭০%/OOS ৩০%; look-ahead replay টেস্ট; ৫৯ টেস্ট স্যান্ডবক্সে পাস
+- পরের পদক্ষেপ: apply zip → `python -m backtest.backtest --years 3` চালিয়ে report.md ফল জানানো; স্প্রেড ও ফল দেখে ধাপ ৩ শেষ, তারপর ধাপ ৪

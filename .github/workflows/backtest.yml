@@ -1,9 +1,20 @@
 name: backtest
 
-# কঙ্কাল (ধাপ ১): হাতে চালানো। ব্যাকটেস্ট ধাপ ৩-এ যোগ হবে।
+# হাতে চালানো (Actions ট্যাব → backtest → Run workflow)।
+# পাবলিক রিপোতে লগ/আর্টিফ্যাক্ট সবাই দেখতে পায়, তাই শুধু report.md ও summary.json আপলোড হয়
+# (কোনো কাঁচা দাম নেই)। trades.csv বা ক্যাশ কখনো আপলোড হয় না।
 
 on:
   workflow_dispatch:
+    inputs:
+      years:
+        description: "কত বছরের ইতিহাস"
+        default: "3"
+        required: true
+      pairs:
+        description: "কমা দিয়ে পেয়ার (খালি = সব)"
+        default: ""
+        required: false
 
 concurrency:
   group: backtest
@@ -15,7 +26,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -23,5 +34,28 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Placeholder
-        run: echo "Backtest will be added in step 3"
+      - name: Tests
+        run: python -m pytest -q
+      - name: Backtest
+        env:
+          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
+          YEARS: ${{ inputs.years }}
+          PAIRS: ${{ inputs.pairs }}
+        run: |
+          if [ -z "$PRICE_API_KEY" ]; then echo "PRICE_API_KEY secret নেই"; exit 1; fi
+          args="--years $YEARS"
+          if [ -n "$PAIRS" ]; then args="$args --pairs $PAIRS"; fi
+          python -m backtest.backtest $args
+      - name: Show report in summary
+        if: always()
+        run: |
+          if [ -f backtest/output/report.md ]; then cat backtest/output/report.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backtest-report
+          path: |
+            backtest/output/report.md
+            backtest/output/summary.json
+          if-no-files-found: warn
+          retention-days: 14

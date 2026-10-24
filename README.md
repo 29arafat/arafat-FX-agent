@@ -65,4 +65,17 @@ PROJECT_STATE.md       প্রজেক্টের বর্তমান অ�
 আউটপুটে প্রতি পেয়ারে H1, H4 (শেষ ২টা) ও D1 (শেষ ৩টা) ক্যান্ডেল আসে।
 
 ## ধাপের অবস্থা
-০ ✅ সেটআপ · ১ ✅ কাঠামো · ২ ডেটা ও ইন্ডিকেটর · ৩ ব্যাকটেস্ট · ৪ সিগন্যাল · ৫ ট্র্যাকিং · ৬ অ্যাপ · ৭ ডিপ্লয় · ৮ লাইভ টেস্ট
+০ ✅ সেটআপ · ১ ✅ কাঠামো · ২ ✅ ডেটা ও ইন্ডিকেটর · ৩ ব্যাকটেস্ট (কোড তৈরি, ফল দেখা বাকি) · ৪ সিগন্যাল · ৫ ট্র্যাকিং · ৬ অ্যাপ · ৭ ডিপ্লয় · ৮ লাইভ টেস্ট
+
+## ব্যাকটেস্ট (ধাপ ৩)
+
+```
+python -m backtest.backtest --years 3            # সব পেয়ার
+python -m backtest.backtest --pairs XAUUSD --years 3
+python -m backtest.backtest --refresh            # ক্যাশ ফেলে নতুন ডেটা
+```
+- Windows PowerShell-এ Key: `$env:PRICE_API_KEY='আপনার-key'` (একই জানালায়, এক লাইনে)। Codespaces/bash-এ: `export PRICE_API_KEY='…'`
+- ফল: `backtest/output/report.md` (বাংলা রিপোর্ট) ও `summary.json`। ইতিহাস `backtest/cache/`-এ জমে, পরের বার API লাগে না।
+- GitHub-এ চালাতে: Actions → backtest → Run workflow (রিপোর্টে কোনো কাঁচা দাম নেই)।
+- স্প্রেড `config.yaml → backtest.spread`-এ। এগুলো প্রাথমিক অনুমান; Exness-এর আসল স্প্রেড দিলে বসানো হবে।
+

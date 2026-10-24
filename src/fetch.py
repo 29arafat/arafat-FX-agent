@@ -196,6 +196,34 @@ def fetch_h1(symbol: str, total: int, **common) -> pd.DataFrame:
     return both[~both.index.duplicated(keep="last")].sort_index()
 
 
+def fetch_h1_history(symbol: str, max_bars: int, page_bars: int = 5000, max_pages: int = 12, **common) -> pd.DataFrame:
+    """ব্যাকটেস্টের জন্য পেজ ধরে পুরনো H1 আনা। ইতিহাস ফুরালে বা max_bars হলে থামে।"""
+    frames, end, got = [], None, 0
+    for _ in range(max_pages):
+        n = min(page_bars, max_bars - got)
+        if n <= 0:
+            break
+        try:
+            df = fetch_candles(symbol, "H1", n, end_date=end, check_align=True, **common)
+        except FetchError:
+            if frames:          # পুরনো দিকে ডেটা নেই, যা পেয়েছি তাই ঠিক
+                break
+            raise
+        if df.empty:
+            break
+        if frames and df.index[0] >= frames[-1].index[0]:
+            break               # অগ্রগতি নেই
+        frames.append(df)
+        got += len(df)
+        end = df.index[0].to_pydatetime()
+        if len(df) < n:
+            break               # ইতিহাসের শুরুতে পৌঁছেছি
+    if not frames:
+        raise FetchError(f"{symbol}: কোনো ইতিহাস পাওয়া যায়নি", False)
+    both = pd.concat(frames[::-1])
+    return both[~both.index.duplicated(keep="last")].sort_index()
+
+
 def aggregate(df: pd.DataFrame, period_hours: int, anchor_hour: int = 0, min_bars: int = 1) -> pd.DataFrame:
     """ক্লোজড ক্যান্ডেল জুড়ে বড় টাইমফ্রেম বানায় (যেমন H1 থেকে H4 বা D1)।
 
@@ -259,6 +287,18 @@ def due_timeframes(now: datetime, cfg: dict) -> list[str]:
     return due
 
 
+def clean_h1(h1: pd.DataFrame, cfg: dict, now: datetime) -> pd.DataFrame:
+    """কাঁচা H1 → পরিষ্কার ক্লোজড H1 (চলমান, শূন্য-রেঞ্জ ও সপ্তাহান্ত বাদ)। লাইভ ও ব্যাকটেস্ট একই।"""
+    d = cfg["data"]
+    h1 = drop_running(h1, 60, now)
+    if d.get("drop_flat_candles", True):
+        h1 = drop_flat(h1)
+    if d.get("drop_weekend_candles", True):
+        w = d["weekend"]
+        h1 = drop_weekend(h1, w["close"]["weekday"], w["close"]["hour"], w["open"]["weekday"], w["open"]["hour"])
+    return h1
+
+
 def fetch_pair(cfg: dict, pair: str, due: list[str], api_key: str, throttle: Throttle,
                now: datetime, session=None) -> dict[str, pd.DataFrame]:
     """একটা পেয়ারের ক্লোজড ক্যান্ডেল: {টাইমফ্রেম: DataFrame}। শুধু H1 আনা হয়, বাকিগুলো বানানো।"""
@@ -267,12 +307,7 @@ def fetch_pair(cfg: dict, pair: str, due: list[str], api_key: str, throttle: Thr
     common = dict(api_key=api_key, throttle=throttle, session=session,
                   retries=d["retries"], timeout=d["request_timeout_seconds"], tz=d["timezone"])
     total = d["d1_h1_bars"] if "D1" in due else d["h1_bars"]   # D1 লাগলে গভীর ইতিহাস
-    h1 = drop_running(fetch_h1(symbol, total, **common), 60, now)
-    if d.get("drop_flat_candles", True):
-        h1 = drop_flat(h1)
-    if d.get("drop_weekend_candles", True):
-        w = d["weekend"]
-        h1 = drop_weekend(h1, w["close"]["weekday"], w["close"]["hour"], w["open"]["weekday"], w["open"]["hour"])
+    h1 = clean_h1(fetch_h1(symbol, total, **common), cfg, now)
     out: dict[str, pd.DataFrame] = {"H1": h1}
     if "H4" in due:
         out["H4"] = drop_running(aggregate(h1, 4, 0, 1), 240, now)

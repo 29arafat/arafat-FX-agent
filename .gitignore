@@ -16,3 +16,4 @@ venv/
 *.zip
 .DS_Store
 backtest/output/
+backtest/cache/

@@ -53,7 +53,24 @@ scoring:                      # প্রাথমিক অনুমান, ধ
     confirmation: 2
     rsi_state: 1
     no_opposing_level: 1
-  threshold: 6                # স্কোর ≥ এই সংখ্যা হলে সিগন্যাল
+  required: [clear_trend, pullback_zone, confirmation]   # এই তিনটি বাধ্যতামূলক (স্কোর দিয়ে পূরণ হয় না)
+  threshold: 7                # স্কোর ≥ এই সংখ্যা হলে সিগন্যাল (প্রাথমিক অনুমান)
+
+strategy:                     # সবই প্রাথমিক খসড়া। ব্যাকটেস্ট দেখে ভালো দেখানোর জন্য টিউন করা হবে না
+  tf_map:                     # কোন সিগন্যাল-টাইমফ্রেমে কোন ফ্রেম কী কাজে লাগে
+    H1: {trend: D1, setup: H4, trigger: H1}
+    H4: {trend: D1, setup: H4, trigger: H4}
+    D1: {trend: D1, setup: D1, trigger: D1}
+  pullback_lookback: 6        # সেটআপ ফ্রেমের শেষ কত ক্যান্ডেলে EMA20 ছোঁয়া খোঁজা
+  zone_break_close: true      # কোনো ক্যান্ডেল EMA50-এর ওপারে ক্লোজ করলে জোন বাতিল
+  rsi_dip_lookback: 3         # RSI ডিপ খোঁজার ক্যান্ডেল সংখ্যা
+  rsi_dip_level: 50           # BUY-তে RSI এর নিচে নেমে আবার উঠলে কনফার্মেশন (SELL-এ ১০০ − এটি)
+  rsi_buy_range: [40, 65]     # "rsi_state" শর্ত (SELL-এ আয়না)
+  sl_buffer_atr: 0.1          # সুইং প্রান্তের বাইরে বাফার (ATR ভগ্নাংশ)
+  max_sl_atr: 4.0             # SL এর চেয়ে দূরে হলে সিগন্যাল বাদ
+  sr:
+    swing_k: 3                # সুইং চিহ্নিত করতে দুই পাশে কত ক্যান্ডেল
+    lookback: 120             # সাপোর্ট/রেজিস্ট্যান্স খুঁজতে সেটআপ ফ্রেমের কত ক্যান্ডেল পেছনে
 
 risk:
   swing_lookback: 10          # সুইং হাই/লো খুঁজতে কত ক্যান্ডেল পেছনে
@@ -79,6 +96,10 @@ backtest:
     AUDUSD: 0.00012
     USDCAD: 0.00015
   min_trades_for_confidence: 30
+  years: 3                    # কত বছরের H1 ইতিহাস আনার চেষ্টা (প্রোভাইডারে না থাকলে যতটা আছে)
+  page_bars: 5000
+  max_pages: 12
+  warmup_bars: 300            # প্রতিটি ফ্রেমের শুরুর এতগুলো ক্যান্ডেলে ইন্ডিকেটর অস্থির, সিগন্যাল নয়
 
 notify:
   telegram_enabled: true
