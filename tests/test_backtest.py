@@ -224,3 +224,21 @@ def test_history_first_page_error_raises():
             pass
     finally:
         F.fetch_candles = orig
+
+
+# ---------- ডায়াগনস্টিক ----------
+def test_diagnose_runs_and_baselines_sane():
+    from backtest import diagnose as D
+    cfg = load_config()
+    df = synth()
+    rep = D.diagnose("EURUSD", df, cfg, NOW, seeds=3)
+    assert "BUY বনাম SELL" in rep and "বেসলাইন" in rep and "বছরভিত্তিক" in rep
+    assert re.search(r"\d\.\d{4,}", rep) is None
+    fr = build_frames(B.clean_h1(df, cfg, NOW), cfg, NOW)
+    a = D.baseline("EURUSD", "H1", fr, cfg, 0.0, "random", 1)
+    b = D.baseline("EURUSD", "H1", fr, cfg, 0.0, "random", 1)
+    assert a == b and len(a) > 20          # একই সিডে একই ফল
+    for x, y in zip(a, a[1:]):
+        assert y["t"] >= x["exit_t"]
+    t = D.baseline("EURUSD", "H1", fr, cfg, 0.0, "trend", 1)
+    assert len(t) > 5
