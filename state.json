@@ -1,0 +1,13 @@
+{
+ "version": 1,
+ "signals": [],
+ "errors": {},
+ "last_check": "2026-10-24T07:33:10Z",
+ "pairs": {
+  "XAUUSD": {
+   "d1_trend": "SELL",
+   "last_candle": "2026-10-23T22:00:00Z",
+   "running_signal": false
+  }
+ }
+}

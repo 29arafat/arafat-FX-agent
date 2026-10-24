@@ -1,0 +1,93 @@
+{
+ "generated_at": "2026-10-24T07:33:10Z",
+ "strategy_version": "v1-experimental",
+ "running": 0,
+ "overall": {
+  "trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "win_rate": 0.0,
+  "total_r": 0,
+  "expectancy": 0.0,
+  "profit_factor": 0.0,
+  "max_drawdown_r": 0.0,
+  "avg_win_r": 0.0,
+  "avg_loss_r": 0.0,
+  "reliable": false,
+  "ambiguous": 0
+ },
+ "by_pair": {},
+ "by_timeframe": {
+  "H1": {
+   "trades": 0,
+   "wins": 0,
+   "losses": 0,
+   "win_rate": 0.0,
+   "total_r": 0,
+   "expectancy": 0.0,
+   "profit_factor": 0.0,
+   "max_drawdown_r": 0.0,
+   "avg_win_r": 0.0,
+   "avg_loss_r": 0.0,
+   "reliable": false,
+   "ambiguous": 0
+  },
+  "H4": {
+   "trades": 0,
+   "wins": 0,
+   "losses": 0,
+   "win_rate": 0.0,
+   "total_r": 0,
+   "expectancy": 0.0,
+   "profit_factor": 0.0,
+   "max_drawdown_r": 0.0,
+   "avg_win_r": 0.0,
+   "avg_loss_r": 0.0,
+   "reliable": false,
+   "ambiguous": 0
+  },
+  "D1": {
+   "trades": 0,
+   "wins": 0,
+   "losses": 0,
+   "win_rate": 0.0,
+   "total_r": 0,
+   "expectancy": 0.0,
+   "profit_factor": 0.0,
+   "max_drawdown_r": 0.0,
+   "avg_win_r": 0.0,
+   "avg_loss_r": 0.0,
+   "reliable": false,
+   "ambiguous": 0
+  }
+ },
+ "last_7d": {
+  "trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "win_rate": 0.0,
+  "total_r": 0,
+  "expectancy": 0.0,
+  "profit_factor": 0.0,
+  "max_drawdown_r": 0.0,
+  "avg_win_r": 0.0,
+  "avg_loss_r": 0.0,
+  "reliable": false,
+  "ambiguous": 0
+ },
+ "last_30d": {
+  "trades": 0,
+  "wins": 0,
+  "losses": 0,
+  "win_rate": 0.0,
+  "total_r": 0,
+  "expectancy": 0.0,
+  "profit_factor": 0.0,
+  "max_drawdown_r": 0.0,
+  "avg_win_r": 0.0,
+  "avg_loss_r": 0.0,
+  "reliable": false,
+  "ambiguous": 0
+ },
+ "equity": []
+}
