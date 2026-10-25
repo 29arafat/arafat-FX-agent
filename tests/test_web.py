@@ -59,3 +59,8 @@ def test_app_uses_saudi_time_and_decimals_for_all_pairs():
     assert "utcOffsetHours: 3" in c and cfg["notify"]["display_utc_offset_hours"] == 3
     for pair, v in cfg["pairs"].items():
         assert re.search(rf"{pair}: {v['decimals']}\b", c), f"{pair} decimals মেলেনি"
+
+
+def test_not_indexed_by_search_engines():
+    assert 'name="robots" content="noindex' in read("index.html")
+    assert "X-Robots-Tag: noindex" in read("_headers")

@@ -1,6 +1,6 @@
 // Service Worker: অ্যাপের ফাইল ক্যাশ করে, অফলাইনেও খোলে। ডেটা (JSON) এখানে ক্যাশ হয় না, অ্যাপ নিজে শেষ ডেটা রাখে।
 // ফাইল বদলালে VERSION বাড়ান, নইলে ফোনে পুরনো সংস্করণ থেকে যেতে পারে।
-const VERSION = "fx-v1";
+const VERSION = "fx-v2";
 const SHELL = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest",
                "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg"];
 
