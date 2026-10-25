@@ -1,6 +1,38 @@
 <!doctype html>
-<html lang="bn"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Arafat FX Agent</title>
-<style>body{background:#0f1218;color:#e6e9ef;font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0}</style>
-</head><body><p>অ্যাপ তৈরি হচ্ছে (ধাপ ৬)।</p></body></html>
+<meta name="theme-color" content="#0c171c">
+<meta name="description" content="গোল্ড ও ফরেক্স সিগন্যালের ফলাফল">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app" class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="brand-name">Arafat FX</span>
+      <span class="brand-ver" id="ver"></span>
+    </div>
+    <button class="sync" id="sync" type="button" aria-label="এখনই রিফ্রেশ করুন">
+      <span class="dot" id="dot"></span><span id="syncText">লোড হচ্ছে</span>
+    </button>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <main id="view" class="view" tabindex="-1"></main>
+</div>
+<nav class="tabs" id="tabs" aria-label="প্রধান মেনু">
+  <a href="#/dash" data-tab="dash"><svg viewBox="0 0 24 24"><path d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg><span>ড্যাশবোর্ড</span></a>
+  <a href="#/running" data-tab="running"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span>চলমান</span><i class="count" id="runCount" hidden></i></a>
+  <a href="#/pairs" data-tab="pairs"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg><span>পেয়ার</span></a>
+  <a href="#/history" data-tab="history"><svg viewBox="0 0 24 24"><path d="M12 7v5l3 2M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg><span>ইতিহাস</span></a>
+</nav>
+<noscript><p style="padding:24px;color:#ece7da">অ্যাপ চালাতে JavaScript চালু করুন।</p></noscript>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

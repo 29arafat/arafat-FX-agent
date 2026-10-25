@@ -35,4 +35,8 @@
 - সিদ্ধান্ত: পাবলিক JSON-এ last_price নেই (Twelve Data শর্ত); সংরক্ষণ Telegram-এর আগে (ক্র্যাশে ডুপ্লিকেট নয়, push ব্যর্থ হলে রান থামে)
 - ৬০ দিনের নিয়ম: নথি বলে পাবলিক রিপোতে "কার্যকলাপ" না থাকলে schedule বন্ধ; কার্যকলাপের সংজ্ঞা নেই → মাসিক ম্যানুয়াল কমিট + দৈনিক সচল-বার্তা
 - Actions চালু হলে পিসি থেকে --send নয় (state আলাদা)
-- পরের পদক্ষেপ: ব্যবহারকারী zip বসাবে, লোকাল ড্রাই-রান, Actions-এ workflow_dispatch পরীক্ষা, তারপর ধাপ ৬ (PWA)
+- ধাপ ৫ ব্যবহারকারী যাচাই করেছে ("সব ঠিকঠাক")
+- ধাপ ৬ কোড (step6-pwa.zip): web/{index.html, style.css, app.js, config.js, sw.js, manifest.webmanifest, _headers, icons/*}; ৪ ট্যাব (ড্যাশবোর্ড/চলমান/পেয়ার/ইতিহাস), R-কার্ভ+ট্রেড-টেপ, SL-এন্ট্রি-TP মই, ৭/৩০/সব ফিল্টার, অফলাইন ক্যাশ (localStorage), পুরনো-ডেটা ব্যানার; ব্রাউজারে (Playwright, ৩৯০px) মক ডেটায় যাচাই, JS stats = Python stats; tests/test_web.py
+- সিদ্ধান্ত: চলমান কার্ডে বর্তমান দাম/এখন R নেই (পাবলিক last_price না রাখার কারণে); চাইলে পরে config storage.public_last_price চালু করে ফিচার যোগ
+- ব্যবহারকারীর ওয়ার্কফ্লো: zip মোবাইলে ডাউনলোড → মোবাইল থেকে GitHub-এ আপলোড/কমিট → পিসিতে git pull (zip খোলা ও মুছা দরকার: Expand-Archive)
+- পরের পদক্ষেপ: ব্যবহারকারী zip বসিয়ে `python -m http.server 8000 -d web` দিয়ে পিসিতে দেখবে; তারপর ধাপ ৭ (Cloudflare Pages: build command ফাঁকা, output web, শুধু main ব্রাঞ্চ)
