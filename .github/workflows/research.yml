@@ -1,0 +1,59 @@
+name: research
+
+# হাতে চালানো (Actions ট্যাব → research → Run workflow)।
+# ধাপ ৩গ: বেশি-ফ্রিকোয়েন্সির প্রার্থী স্ট্র্যাটেজি যাচাই। লাইভ সিস্টেম বদলায় না।
+# শুধু research.md ও research.json আপলোড হয় (কোনো কাঁচা দাম নেই)।
+
+on:
+  workflow_dispatch:
+    inputs:
+      years:
+        description: "কত বছরের M15 ইতিহাস"
+        default: "3"
+        required: true
+      pair:
+        description: "পেয়ার"
+        default: "XAUUSD"
+        required: true
+
+concurrency:
+  group: research
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Tests
+        run: python -m pytest -q
+      - name: Research
+        env:
+          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
+          YEARS: ${{ inputs.years }}
+          PAIR: ${{ inputs.pair }}
+        run: |
+          if [ -z "$PRICE_API_KEY" ]; then echo "PRICE_API_KEY secret নেই"; exit 1; fi
+          python -m backtest.research --years "$YEARS" --pair "$PAIR"
+      - name: Show report in summary
+        if: always()
+        run: |
+          if [ -f backtest/output/research.md ]; then cat backtest/output/research.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-report
+          path: |
+            backtest/output/research.md
+            backtest/output/research.json
+          if-no-files-found: warn
+          retention-days: 14

@@ -25,7 +25,7 @@ import requests
 import yaml
 
 API_URL = "https://api.twelvedata.com/time_series"
-INTERVALS = {"H1": ("1h", 60), "H4": ("4h", 240)}  # টাইমফ্রেম -> (API নাম, মিনিট)
+INTERVALS = {"M15": ("15min", 15), "H1": ("1h", 60), "H4": ("4h", 240)}  # টাইমফ্রেম -> (API নাম, মিনিট)
 OHLC = ["open", "high", "low", "close"]
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -196,7 +196,7 @@ def fetch_h1(symbol: str, total: int, **common) -> pd.DataFrame:
     return both[~both.index.duplicated(keep="last")].sort_index()
 
 
-def fetch_h1_history(symbol: str, max_bars: int, page_bars: int = 5000, max_pages: int = 12, **common) -> pd.DataFrame:
+def fetch_h1_history(symbol: str, max_bars: int, page_bars: int = 5000, max_pages: int = 12, tf: str = "H1", **common) -> pd.DataFrame:
     """ব্যাকটেস্টের জন্য পেজ ধরে পুরনো H1 আনা। ইতিহাস ফুরালে বা max_bars হলে থামে।"""
     frames, end, got = [], None, 0
     for _ in range(max_pages):
@@ -204,7 +204,7 @@ def fetch_h1_history(symbol: str, max_bars: int, page_bars: int = 5000, max_page
         if n <= 0:
             break
         try:
-            df = fetch_candles(symbol, "H1", n, end_date=end, check_align=True, **common)
+            df = fetch_candles(symbol, tf, n, end_date=end, check_align=True, **common)
         except FetchError:
             if frames:          # পুরনো দিকে ডেটা নেই, যা পেয়েছি তাই ঠিক
                 break
