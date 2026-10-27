@@ -49,11 +49,11 @@
  "errors": {
   "900703ec43d2": 1793025695230659000
  },
- "last_check": "2026-10-27T21:30:27Z",
+ "last_check": "2026-10-27T22:33:03Z",
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-10-27T21:00:00Z",
+   "last_candle": "2026-10-27T22:00:00Z",
    "running_signal": true
   }
  },
