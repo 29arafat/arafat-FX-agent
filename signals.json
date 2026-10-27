@@ -1,1 +1,40 @@
-[]
+[
+ {
+  "id": "SIG-20261027-01",
+  "pair": "XAUUSD",
+  "direction": "SELL",
+  "entry": 4063.56,
+  "tp": 4022.66,
+  "sl": 4084.0,
+  "rr": "1:2",
+  "timeframe": "H1",
+  "score": 4,
+  "confirmed": false,
+  "opened_at": "2026-10-27T16:00:00Z",
+  "status": "Running",
+  "closed_at": null,
+  "result_r": 0,
+  "ambiguous": false,
+  "entry_valid_until": 4060.15,
+  "strategy_version": "v1-experimental"
+ },
+ {
+  "id": "SIG-20261027-02",
+  "pair": "XAUUSD",
+  "direction": "SELL",
+  "entry": 4063.56,
+  "tp": 3982.3,
+  "sl": 4104.18,
+  "rr": "1:2",
+  "timeframe": "H4",
+  "score": 5,
+  "confirmed": false,
+  "opened_at": "2026-10-27T16:00:00Z",
+  "status": "Running",
+  "closed_at": null,
+  "result_r": 0,
+  "ambiguous": false,
+  "entry_valid_until": 4056.79,
+  "strategy_version": "v1-experimental"
+ }
+]
