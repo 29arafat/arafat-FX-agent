@@ -16,7 +16,9 @@
   "result_r": 0,
   "ambiguous": false,
   "entry_valid_until": 4060.15,
-  "strategy_version": "v1-experimental"
+  "strategy_version": "v1-experimental",
+  "parts": null,
+  "risk_atr": null
  },
  {
   "id": "SIG-20261027-02",
@@ -35,6 +37,8 @@
   "result_r": 0,
   "ambiguous": false,
   "entry_valid_until": 4056.79,
-  "strategy_version": "v1-experimental"
+  "strategy_version": "v1-experimental",
+  "parts": null,
+  "risk_atr": null
  }
 ]
