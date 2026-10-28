@@ -182,6 +182,125 @@
       mark("sl", "SL", s.sl), mark("en", "এন্ট্রি", s.entry), mark("tp", "TP", s.tp));
   }
 
+
+  // ---------- ইনফো পপ-আপ: কেন এই সিগন্যাল, ঝুঁকি ও সতর্কতা ----------
+  var TFROLE = { H1: ["D1", "H4", "H1"], H4: ["D1", "H4", "H4"], D1: ["D1", "D1", "D1"] };   // [ট্রেন্ড, পুলব্যাক, ট্রিগার] (config.yaml tf_map)
+  var MAXSCORE = 8;                                                                             // ২+২+২+১+১ (config.yaml scoring.weights)
+
+  // নতুন সিগন্যালে parts আছে। পুরনো সিগন্যালে স্কোর ও কনফার্মড থেকে যতটা নিশ্চিতভাবে বলা যায় তাই (বাকি null = অজানা)।
+  function partsOf(s) {
+    if (s.parts && typeof s.parts === "object") {
+      return { conf: !!s.parts.confirmation, rsi: !!s.parts.rsi_state, level: !!s.parts.no_opposing_level, known: true };
+    }
+    var conf = !!s.confirmed, rest = Number(s.score) - 4 - (conf ? 2 : 0), rsi = null, level = null;
+    if (rest <= 0) { rsi = false; level = false; }
+    else if (rest >= 2) { rsi = true; level = true; }
+    return { conf: conf, rsi: rsi, level: level, known: false };
+  }
+
+  function sec(title, nodes) { return h("section", { class: "msec" }, h("h3", { text: title }), nodes); }
+  function para(t) { return h("p", { text: t }); }
+  function mark(v) { return v === true ? ["✓", "ok", "মিলেছে"] : v === false ? ["✗", "no", "মেলেনি"] : ["?", "unk", "রেকর্ড নেই"]; }
+  function cond(num, title, pts, v, desc) {
+    var m = mark(v);
+    return h("li", { class: "cond " + m[1] },
+      h("span", { class: "cmark", "aria-label": m[2], text: m[0] }),
+      h("div", null, h("b", { text: num + " " + title + " (" + pts + ")" }), h("span", { class: "cst", text: " · " + m[2] }), h("div", { class: "cdesc", text: desc })));
+  }
+  function bullets(arr) { return h("ul", { class: "warn" }, arr.map(function (t) { return h("li", { text: t }); })); }
+
+  function infoContent(s) {
+    var sell = s.direction === "SELL", pa = s.pair, role = TFROLE[s.timeframe] || TFROLE.H1, p = partsOf(s);
+    var entry = Number(s.entry), risk = Math.abs(entry - Number(s.sl)), reward = Math.abs(Number(s.tp) - entry);
+    var upDown = sell ? "নিচের" : "ওপরের", moveTxt = sell ? "নিচে নামার" : "ওপরে ওঠার";
+    var others = S.signals.filter(function (x) { return x.status === "Running" && x.id !== s.id && x.pair === s.pair && x.direction === s.direction; });
+    var root = h("div");
+    add(root, sec("সংক্ষেপে", [
+      para(pa + "-এ " + s.timeframe + " টাইমফ্রেমে " + moveTxt + " (" + s.direction + ") সিগন্যাল। " + role[0] + " চার্টে বড় ট্রেন্ড " + upDown +
+           " দিকে। সেই ট্রেন্ডের মধ্যে ছোট উল্টো-নড়াচড়ার (পুলব্যাক) পর আবার ট্রেন্ডের দিকে ফেরার সম্ভাবনা ধরে এই এন্ট্রি।"),
+      para("এটা ভবিষ্যদ্বাণী নয়। নির্দিষ্ট কিছু নিয়ম মিলেছে বলেই সিস্টেম সংকেত দিয়েছে, আর তার মধ্যেও হারার সম্ভাবনা সবসময় আছে।")]));
+    add(root, sec("কোন লজিকে সিগন্যাল এল", [
+      h("ul", { class: "conds" }, [
+        cond("১.", "পরিষ্কার ট্রেন্ড (" + role[0] + ")", "+২", true,
+             "EMA50 ও EMA200-এর ফাঁক অন্তত ০.৩ × ATR, আর EMA50 " + (sell ? "নিচে" : "ওপরে") + "। এটা বাধ্যতামূলক শর্ত।"),
+        cond("২.", "পুলব্যাক জোন (" + role[1] + ")", "+২", true,
+             "গত ৬ ক্যান্ডেলের মধ্যে দাম EMA20 পর্যন্ত ফিরেছে, কিন্তু কোনো ক্যান্ডেল EMA50-এর ওপারে ক্লোজ করেনি, অর্থাৎ ট্রেন্ড ভাঙেনি। এটাও বাধ্যতামূলক।"),
+        cond("৩.", "কনফার্মেশন (" + role[2] + ")", "+২, ঐচ্ছিক", p.conf,
+             "ট্রিগার ক্যান্ডেল ট্রেন্ডের দিকে ক্লোজ হয়েছে, RSI ঘুরেছে, আর কাছের ক্যান্ডেলে RSI মাঝামাঝি (৫০) ছুঁয়েছে। এটা থাকলে সংকেত শক্ত, না থাকলেও সিগন্যাল আসতে পারে।"),
+        cond("৪.", "RSI অবস্থা", "+১, ঐচ্ছিক", p.rsi,
+             sell ? "RSI ৩৫ থেকে ৬০-এর মধ্যে (খুব নিচে নেমে যায়নি, অর্থাৎ নামার জায়গা আছে)।" : "RSI ৪০ থেকে ৬৫-এর মধ্যে (খুব ওপরে ওঠেনি, অর্থাৎ ওঠার জায়গা আছে)।"),
+        cond("৫.", "সামনে বিপরীত লেভেল নেই", "+১, ঐচ্ছিক", p.level,
+             "এন্ট্রি থেকে ২R দূরত্বের মধ্যে কাছের " + (sell ? "সাপোর্ট" : "রেজিস্ট্যান্স") + " নেই। এটা মিললে লক্ষ্য ১:৩ হতে পারে (এই সিগন্যালে R:R " + s.rr + ")।")]),
+      para("মোট স্কোর " + s.score + "/" + MAXSCORE + " (ন্যূনতম ৪ লাগে)। স্কোর ৬ বা বেশি এবং কনফার্মেশন থাকলে 'কনফার্মড' লেবেল পড়ে" +
+           (s.confirmed ? "; এই সিগন্যাল কনফার্মড।" : "; এই সিগন্যাল কনফার্মড নয়, অর্থাৎ অতিরিক্ত শর্ত কম মিলেছে।")),
+      (p.known || (p.rsi !== null && p.level !== null)) ? null : para("পুরনো সিগন্যাল, তাই '?' চিহ্নিত শর্তের আলাদা রেকর্ড নেই। যা স্কোর থেকে নিশ্চিত বলা যায় শুধু তাই দেখানো হয়েছে।")]));
+    add(root, sec("ট্রেডের হিসাব", [
+      h("dl", { class: "kv num" },
+        h("dt", { text: "এন্ট্রি" }), h("dd", { text: px(pa, s.entry) }),
+        h("dt", { text: "SL (ক্ষতি সীমা)" }), h("dd", { text: px(pa, s.sl) }),
+        h("dt", { text: "TP (লক্ষ্য)" }), h("dd", { text: px(pa, s.tp) }),
+        h("dt", { text: "ঝুঁকি দূরত্ব" }), h("dd", { text: risk.toFixed(C.decimals[pa] == null ? 5 : C.decimals[pa]) + (s.risk_atr ? " (≈ " + s.risk_atr + " ATR)" : "") }),
+        h("dt", { text: "লক্ষ্য দূরত্ব" }), h("dd", { text: reward.toFixed(C.decimals[pa] == null ? 5 : C.decimals[pa]) + " (R:R " + s.rr + ")" }),
+        h("dt", { text: "এন্ট্রি বৈধ" }), h("dd", { text: px(pa, s.entry_valid_until) + (sell ? " বা ওপরে" : " বা নিচে") })),
+      para("SL: গত ১০ ক্যান্ডেলের সুইং " + (sell ? "হাই" : "লো") + "-এর বাইরে ০.১ ATR বাফার, অথবা ১.৫ ATR, এর মধ্যে যেটা দূরে। SL ৪ ATR-এর বেশি দূরে হলে সিগন্যালই দেওয়া হয় না।"),
+      para("TP: ঝুঁকির ২ গুণ (১:২)। সামনে পথ ফাঁকা থাকলে ৩ গুণ (১:৩)। SL হিট মানে −১R, TP হিট মানে +" + (s.rr || "").split(":")[1] + "R (স্প্রেডসহ কিছু কম)।"),
+      para("এন্ট্রির সীমা: দাম " + px(pa, s.entry_valid_until) + (sell ? "-এর নিচে" : "-এর ওপরে") + " চলে গেলে ইতিমধ্যে লক্ষ্যের দিকে অনেকটা এগিয়ে গেছে, ঝুঁকি-রিওয়ার্ড খারাপ হয়ে গেছে। তখন ধাওয়া করে ঢুকবেন না।"),
+      para("ট্র্যাকিং: সিস্টেম H1 ক্যান্ডেল দিয়ে SL/TP মেলায়। একই ক্যান্ডেলে দুটোই ছুঁলে সাবধানী নিয়মে SL ধরা হয়।")]));
+    var w = [
+      "কৌশলটি পরীক্ষামূলক (" + (s.strategy_version || "—") + ")। ইতিহাসে এর নির্ভরযোগ্য এজ এখনো প্রমাণিত হয়নি, লাইভ ফরোয়ার্ড টেস্ট চলছে। তাই প্রথমে ডেমো অ্যাকাউন্টে বা খুব ছোট ঝুঁকিতে ব্যবহার করুন।",
+      "যেকোনো সিগন্যাল হারতে পারে। লাভ-লস পালা করে আসে, টানা কয়েকটা লসও স্বাভাবিক। একটা ট্রেডের ফল দিয়ে কৌশল বিচার করা যায় না।",
+      "এটা ট্রেন্ড-ফলো কৌশল। বাজার ট্রেন্ড ছেড়ে রেঞ্জে গেলে বা ট্রেন্ড উল্টে গেলে বারবার SL হতে পারে।",
+      "বড় খবরের (NFP, FOMC, CPI, ফেড/ECB বক্তব্য) আগে-পরে স্প্রেড বাড়ে, দাম লাফিয়ে SL পেরিয়ে যেতে পারে (স্লিপেজ)। খবরের সময় এই ট্রেড এড়ানো বা ছোট করা ভালো।",
+      "সিগন্যালের দাম ডেটা-প্রোভাইডারের চার্টের। আপনার ব্রোকারের দামে সামান্য ফারাক ও স্প্রেড থাকবে, বাস্তব এন্ট্রি, SL ও TP কিছুটা আলাদা হবে।",
+      "সিগন্যাল ক্যান্ডেল ক্লোজের পরে তৈরি হয়, বার্তা আসতে মিনিট থেকে ঘণ্টাখানেক দেরি হতে পারে। দেরিতে দাম এন্ট্রি-সীমা পার করলে ট্রেডটি এড়ান।",
+      "শুক্রবার সন্ধ্যা ও সপ্তাহান্ত: শুক্র ১৮:০০ UTC (সৌদি ২১:০০)-এর পর নতুন সিগন্যাল আসে না। কিন্তু সপ্তাহান্তে ট্রেড খোলা রাখলে সোমবারের গ্যাপে SL পেরিয়ে বড় ক্ষতি হতে পারে।",
+      "লট এমনভাবে ঠিক করুন যাতে SL হিটে আপনার সহনীয় অঙ্কই যায়। SL দূরত্ব ছোট-বড় হয়, তাই প্রতিবার একই লট ব্যবহার করলে টাকার ঝুঁকি বদলে যায়। এটি আর্থিক পরামর্শ নয়, সিদ্ধান্ত আপনার।"];
+    if (!p.conf) w.unshift("এই সিগন্যালে কনফার্মেশন নেই (শুধু ট্রেন্ড ও পুলব্যাক মিলেছে), তাই সংকেত তুলনামূলক দুর্বল। অনেক ট্রেডার এমন সিগন্যালে ছোট ঝুঁকি নেন বা বাদ দেন।");
+    if (s.timeframe !== "H1") w.unshift(s.timeframe + " সিগন্যালে SL তুলনামূলক দূরে (এখানে " + risk.toFixed(C.decimals[pa] == null ? 5 : C.decimals[pa]) + ")। একই লটে টাকার ঝুঁকি বেশি, লট কমিয়ে নিন। ট্রেড বন্ধ হতেও বেশি সময় লাগে।");
+    if (others.length) w.unshift("একই পেয়ার ও একই দিকে আরও " + others.length + "টি চলমান সিগন্যাল আছে (" + others.map(function (x) { return x.timeframe; }).join(", ") +
+      ")। সেগুলো স্বতন্ত্র ট্রেড নয়, একই বাজার-চালের ওপর বাজি। সব ধরলে ঝুঁকি দ্বিগুণ বা তার বেশি হয়ে যায়।");
+    add(root, sec("সম্ভাব্য ঝুঁকি ও সতর্কতা", bullets(w)));
+    add(root, h("p", { class: "mfoot num", text: s.id + " · খোলা " + fmtTime(s.opened_at) + " সৌদি" }));
+    return root;
+  }
+
+  var modalState = null;
+  function closeInfo() {
+    if (!modalState) return;
+    document.removeEventListener("keydown", modalState.onKey);
+    modalState.bg.remove();
+    document.body.classList.remove("modal-open");
+    var back = modalState.opener;
+    modalState = null;
+    if (back && document.body.contains(back)) back.focus();
+  }
+  function openInfo(s, opener) {
+    closeInfo();
+    var titleId = "mtitle";
+    var closeBtn = h("button", { class: "mclose", type: "button", "aria-label": "বন্ধ করুন", text: "✕", onclick: closeInfo });
+    var box = h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, tabindex: "-1" },
+      h("div", { class: "mhead" },
+        h("div", { class: "mtitle", id: titleId }, h("b", { text: s.pair + " · " + s.direction + " · " + s.timeframe }), h("span", { text: "সিগন্যালের বিস্তারিত" })),
+        closeBtn),
+      h("div", { class: "mbody" }, infoContent(s)));
+    var bg = h("div", { class: "modal-bg", onclick: function (e) { if (e.target === bg) closeInfo(); } }, box);
+    function onKey(e) {
+      if (e.key === "Escape") { closeInfo(); return; }
+      if (e.key === "Tab") {                      // ফোকাস পপ-আপের ভেতরেই থাকে
+        var f = box.querySelectorAll("button, a[href]");
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(bg);
+    document.body.classList.add("modal-open");
+    modalState = { bg: bg, onKey: onKey, opener: opener };
+    box.focus();
+  }
+
   function sigCard(s, extra) {
     var isNew = s.status === "Running" && Date.now() - new Date(s.opened_at).getTime() < C.newBadgeHours * 3600000;
     return h("article", { class: "sig" },
@@ -190,7 +309,10 @@
         h("span", { class: "tag " + (s.direction === "BUY" ? "buy" : "sell"), text: s.direction === "BUY" ? "BUY" : "SELL" }),
         h("span", { class: "tag", text: s.timeframe }),
         s.confirmed ? h("span", { class: "tag conf", text: "কনফার্মড" }) : null,
-        isNew ? h("span", { class: "tag new", text: "নতুন" }) : null),
+        isNew ? h("span", { class: "tag new", text: "নতুন" }) : null,
+        h("button", { class: "info-btn", type: "button", "aria-label": "এই সিগন্যালের বিস্তারিত তথ্য", "aria-haspopup": "dialog",
+                      onclick: function (e) { openInfo(s, e.currentTarget); } },
+          svg("svg", { viewBox: "0 0 24 24", "aria-hidden": "true" }, [svg("circle", { cx: "12", cy: "12", r: "9" }), svg("path", { d: "M12 11v5.5" }), svg("circle", { cx: "12", cy: "7.8", r: "0.6" })]))),
       h("div", { class: "sig-meta", text: "খোলা " + fmtTime(s.opened_at) + " সৌদি · " + ago(s.opened_at) }),
       rail(s),
       h("div", { class: "sig-foot" },
@@ -386,5 +508,5 @@
   loadCache();
   render();
   refresh();
-  window.__fx = { summarize: summarize, S: S };   // টেস্টের জন্য
+  window.__fx = { summarize: summarize, S: S, partsOf: partsOf };   // টেস্টের জন্য
 })();

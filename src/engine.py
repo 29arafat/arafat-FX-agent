@@ -106,6 +106,8 @@ def new_signals(state: dict, pair: str, frames: dict, cfg: dict, now_ns: int) ->
                 "confirmed": bool(sig.parts.get("confirmation")) and sig.score >= cfg["strategy"]["confirmed_min_score"],
                 "opened_at": iso(t), "status": "Running", "closed_at": None, "result_r": 0,
                 "ambiguous": False, "entry_valid_until": valid,
+                "parts": {k: bool(v) for k, v in sig.parts.items()},      # কোন শর্ত মিলেছে (অ্যাপের ইনফো পপ-আপে)
+                "risk_atr": round(sig.risk / sig.atr, 2),                 # SL দূরত্ব ÷ ATR (একক-হীন অনুপাত)
                 "strategy_version": cfg["strategy"]["version"],
                 "notified_open": False, "notified_close": None,
             }

@@ -17,7 +17,7 @@ from pathlib import Path
 from .stats import build_stats
 
 PUBLIC_FIELDS = ["id", "pair", "direction", "entry", "tp", "sl", "rr", "timeframe", "score", "confirmed", "opened_at",
-                 "status", "closed_at", "result_r", "ambiguous", "entry_valid_until", "strategy_version"]
+                 "status", "closed_at", "result_r", "ambiguous", "entry_valid_until", "strategy_version", "parts", "risk_atr"]
 IDENT = ["-c", "user.name=github-actions[bot]", "-c", "user.email=41898282+github-actions[bot]@users.noreply.github.com"]
 
 

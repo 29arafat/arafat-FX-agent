@@ -82,6 +82,35 @@ th:first-child, td:first-child { text-align: left; }
 .tag.conf { color: var(--brass); border-color: var(--brass-dim); }
 .sig-meta { color: var(--muted); font-size: 14px; margin-top: 6px; }
 
+.info-btn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-top: -8px; margin-right: -10px;
+  background: transparent; border: 0; border-radius: 50%; color: var(--brass); cursor: pointer; }
+.info-btn svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.info-btn svg circle:last-child { fill: currentColor; stroke-width: 1.6; }
+.info-btn:active { background: var(--panel-2); }
+
+/* ইনফো পপ-আপ */
+body.modal-open { overflow: hidden; }
+.modal-bg { position: fixed; inset: 0; z-index: 20; background: rgba(4, 10, 13, .72); display: flex; align-items: flex-end; justify-content: center; }
+.modal { width: 100%; max-width: 560px; max-height: 88vh; max-height: 88dvh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 20px 20px 0 0; outline: none; padding-bottom: env(safe-area-inset-bottom); }
+.mhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 8px 10px 18px; border-bottom: 1px solid var(--line); }
+.mtitle b { display: block; font-size: 18px; } .mtitle span { color: var(--muted); font-size: 13px; }
+.mclose { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; }
+.mclose:active { background: var(--panel-2); }
+.mbody { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 4px 18px 22px; }
+.msec h3 { font-size: 16px; margin: 20px 0 8px; color: var(--brass); }
+.msec p { margin: 0 0 10px; font-size: 15px; color: #d9d2bd; }
+.conds, .warn { list-style: none; margin: 0 0 10px; padding: 0; }
+.cond { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
+.cond:first-child { border-top: 0; }
+.cmark { flex: none; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; border: 1px solid var(--line); margin-top: 2px; }
+.cond.ok .cmark { color: var(--win); border-color: #2f6650; } .cond.no .cmark { color: var(--loss); border-color: #7a3d38; } .cond.unk .cmark { color: var(--muted); }
+.cst { color: var(--muted); font-size: 13px; } .cdesc { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.warn li { position: relative; padding: 8px 0 8px 18px; font-size: 15px; color: #e9d9b0; border-top: 1px solid var(--line); }
+.warn li:first-child { border-top: 0; }
+.warn li::before { content: ""; position: absolute; left: 2px; top: 17px; width: 7px; height: 7px; border-radius: 50%; background: var(--brass); }
+.mfoot { color: var(--muted); font-size: 12px; margin: 14px 0 0; }
+
 /* দামের মই: SL ← এন্ট্রি → TP। এক নজরে ঝুঁকি ও লক্ষ্য */
 .rail { position: relative; height: 66px; margin: 18px 34px 6px; }
 .rail-line { position: absolute; left: 0; right: 0; top: 22px; height: 4px; border-radius: 2px;

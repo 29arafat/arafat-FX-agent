@@ -64,3 +64,11 @@ def test_app_uses_saudi_time_and_decimals_for_all_pairs():
 def test_not_indexed_by_search_engines():
     assert 'name="robots" content="noindex' in read("index.html")
     assert "X-Robots-Tag: noindex" in read("_headers")
+
+
+def test_info_popup_wired_safely():
+    js, css = read("app.js"), read("style.css")
+    assert "info-btn" in js and "openInfo" in js and 'role: "dialog"' in js and '"aria-modal": "true"' in js
+    assert "Escape" in js and "modal-bg" in css and "body.modal-open" in css
+    assert "innerHTML" not in js
+    assert 'VERSION = "fx-v3"' in read("sw.js")        # app.js বদলেছে, তাই ক্যাশ সংস্করণ বেড়েছে

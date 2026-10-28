@@ -361,6 +361,8 @@ def test_datastore_writes_public_files_and_pushes():
                    save=lambda after=False: (ds.write(state, CFG), ds.commit_push("data: test")))
         sig = json.loads((clone / "signals.json").read_text())
         assert len(sig) == 1 and set(sig[0]) == set(PUBLIC_FIELDS) and "key" not in sig[0] and "notified_open" not in sig[0]
+        assert sig[0]["parts"]["clear_trend"] is True and sig[0]["parts"]["pullback_zone"] is True      # অ্যাপের ইনফো পপ-আপের জন্য
+        assert all(isinstance(v, bool) for v in sig[0]["parts"].values()) and 0 < sig[0]["risk_atr"] <= 4.0
         status = json.loads((clone / "status.json").read_text())
         assert status["pairs"]["XAUUSD"]["running_signal"] is True and "last_price" not in json.dumps(status)
         assert json.loads((clone / "stats.json").read_text())["running"] == 1
