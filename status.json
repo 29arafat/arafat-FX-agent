@@ -1,11 +1,11 @@
 {
- "last_check": "2026-10-29T16:48:25Z",
+ "last_check": "2026-10-29T17:43:37Z",
  "strategy_version": "v1-experimental",
  "stale_after_hours": 3,
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-10-29T16:00:00Z",
+   "last_candle": "2026-10-29T17:00:00Z",
    "running_signal": true
   }
  }
