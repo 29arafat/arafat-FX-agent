@@ -73,7 +73,7 @@
    "risk_atr": 1.5,
    "strategy_version": "v1-experimental",
    "notified_open": true,
-   "notified_close": false
+   "notified_close": true
   }
  ],
  "errors": {
