@@ -1,13 +1,13 @@
 {
- "generated_at": "2026-10-30T06:47:01Z",
+ "generated_at": "2026-10-30T07:56:12Z",
  "strategy_version": "v1-experimental",
- "running": 2,
+ "running": 1,
  "overall": {
-  "trades": 1,
-  "wins": 1,
+  "trades": 2,
+  "wins": 2,
   "losses": 0,
   "win_rate": 100.0,
-  "total_r": 2.0,
+  "total_r": 4.0,
   "expectancy": 2.0,
   "profit_factor": null,
   "max_drawdown_r": 0.0,
@@ -18,11 +18,11 @@
  },
  "by_pair": {
   "XAUUSD": {
-   "trades": 1,
-   "wins": 1,
+   "trades": 2,
+   "wins": 2,
    "losses": 0,
    "win_rate": 100.0,
-   "total_r": 2.0,
+   "total_r": 4.0,
    "expectancy": 2.0,
    "profit_factor": null,
    "max_drawdown_r": 0.0,
@@ -48,15 +48,15 @@
    "ambiguous": 0
   },
   "H4": {
-   "trades": 0,
-   "wins": 0,
+   "trades": 1,
+   "wins": 1,
    "losses": 0,
-   "win_rate": 0.0,
-   "total_r": 0,
-   "expectancy": 0.0,
-   "profit_factor": 0.0,
+   "win_rate": 100.0,
+   "total_r": 2.0,
+   "expectancy": 2.0,
+   "profit_factor": null,
    "max_drawdown_r": 0.0,
-   "avg_win_r": 0.0,
+   "avg_win_r": 2.0,
    "avg_loss_r": 0.0,
    "reliable": false,
    "ambiguous": 0
@@ -77,11 +77,11 @@
   }
  },
  "last_7d": {
-  "trades": 1,
-  "wins": 1,
+  "trades": 2,
+  "wins": 2,
   "losses": 0,
   "win_rate": 100.0,
-  "total_r": 2.0,
+  "total_r": 4.0,
   "expectancy": 2.0,
   "profit_factor": null,
   "max_drawdown_r": 0.0,
@@ -91,11 +91,11 @@
   "ambiguous": 0
  },
  "last_30d": {
-  "trades": 1,
-  "wins": 1,
+  "trades": 2,
+  "wins": 2,
   "losses": 0,
   "win_rate": 100.0,
-  "total_r": 2.0,
+  "total_r": 4.0,
   "expectancy": 2.0,
   "profit_factor": null,
   "max_drawdown_r": 0.0,
@@ -108,6 +108,10 @@
   {
    "t": "2026-10-29T09:00:00Z",
    "r": 2.0
+  },
+  {
+   "t": "2026-10-30T07:00:00Z",
+   "r": 4.0
   }
  ]
 }
