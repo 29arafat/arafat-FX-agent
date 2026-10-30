@@ -58,9 +58,9 @@
    "score": 5,
    "confirmed": false,
    "opened_at": "2026-10-29T20:00:00Z",
-   "status": "Running",
-   "closed_at": null,
-   "result_r": 0,
+   "status": "TP",
+   "closed_at": "2026-10-30T08:00:00Z",
+   "result_r": 2.0,
    "ambiguous": false,
    "entry_valid_until": 4018.43,
    "parts": {
@@ -73,18 +73,18 @@
    "risk_atr": 1.5,
    "strategy_version": "v1-experimental",
    "notified_open": true,
-   "notified_close": null
+   "notified_close": false
   }
  ],
  "errors": {
   "900703ec43d2": 1793025695230659000
  },
- "last_check": "2026-10-30T07:56:12Z",
+ "last_check": "2026-10-30T08:49:06Z",
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-10-30T07:00:00Z",
-   "running_signal": true
+   "last_candle": "2026-10-30T08:00:00Z",
+   "running_signal": false
   }
  },
  "last_heartbeat": "2026-10-30"
