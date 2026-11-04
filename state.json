@@ -88,9 +88,9 @@
    "score": 6,
    "confirmed": false,
    "opened_at": "2026-11-02T21:00:00Z",
-   "status": "Running",
-   "closed_at": null,
-   "result_r": 0,
+   "status": "SL",
+   "closed_at": "2026-11-04T06:00:00Z",
+   "result_r": -1.0,
    "ambiguous": false,
    "entry_valid_until": 3941.88,
    "parts": {
@@ -103,7 +103,7 @@
    "risk_atr": 1.52,
    "strategy_version": "v1-experimental",
    "notified_open": true,
-   "notified_close": null
+   "notified_close": false
   },
   {
    "id": "SIG-20261102-02",
@@ -118,9 +118,9 @@
    "score": 5,
    "confirmed": false,
    "opened_at": "2026-11-02T20:00:00Z",
-   "status": "Running",
-   "closed_at": null,
-   "result_r": 0,
+   "status": "SL",
+   "closed_at": "2026-11-04T06:00:00Z",
+   "result_r": -1.0,
    "ambiguous": false,
    "entry_valid_until": 3936.55,
    "parts": {
@@ -133,21 +133,22 @@
    "risk_atr": 1.85,
    "strategy_version": "v1-experimental",
    "notified_open": true,
-   "notified_close": null
+   "notified_close": false
   }
  ],
  "errors": {
   "900703ec43d2": 1793025695230659000,
   "914d31a4a731": 1793657744374245000,
   "d86dfa141279": 1793752253609821000,
-  "63c5a67ad376": 1793733651204470000
+  "63c5a67ad376": 1793733651204470000,
+  "5d4432738f11": 1793774947156585000
  },
- "last_check": "2026-11-04T00:30:53Z",
+ "last_check": "2026-11-04T06:49:07Z",
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-11-04T00:00:00Z",
-   "running_signal": true
+   "last_candle": "2026-11-04T06:00:00Z",
+   "running_signal": false
   }
  },
  "last_heartbeat": "2026-11-03"
