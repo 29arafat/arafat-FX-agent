@@ -66,3 +66,12 @@ def test_workflows_are_valid_yaml_and_safe():
     sig = yaml.safe_load((ROOT / ".github" / "workflows" / "signals.yml").read_text(encoding="utf-8"))
     assert sig["permissions"]["contents"] == "write" and sig["concurrency"]["cancel-in-progress"] is False
     assert any("cron" in s for s in sig[True if True in sig else "on"]["schedule"])
+
+
+def test_signals_workflow_has_multiple_schedules_per_hour():
+    import yaml
+    wf = yaml.safe_load(open(".github/workflows/signals.yml", encoding="utf-8").read())
+    on = wf.get("on", wf.get(True))
+    crons = [x["cron"] for x in on["schedule"]]
+    assert len(crons) >= 2 and all(c.split()[1:] == ["*", "*", "*", "*"] for c in crons)
+    assert len({c.split()[0] for c in crons}) == len(crons)
