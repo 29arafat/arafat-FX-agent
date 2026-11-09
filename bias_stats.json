@@ -1,6 +1,112 @@
 {
  "version": 1,
- "generated_at": "2026-11-09T10:12:42Z",
+ "generated_at": "2026-11-09T22:20:36Z",
  "min_samples": 100,
- "groups": {}
+ "groups": {
+  "AUDUSD|d1": {
+   "n_logged": 1,
+   "n_resolved": 0,
+   "n_directional": 0,
+   "n_neutral": 0,
+   "hit_rate": null,
+   "hit_ci95": [
+    null,
+    null
+   ],
+   "base_rate_always_one_side": null,
+   "up_rate": null,
+   "range_coverage": null,
+   "enough_samples": false
+  },
+  "EURUSD|d1": {
+   "n_logged": 1,
+   "n_resolved": 0,
+   "n_directional": 0,
+   "n_neutral": 0,
+   "hit_rate": null,
+   "hit_ci95": [
+    null,
+    null
+   ],
+   "base_rate_always_one_side": null,
+   "up_rate": null,
+   "range_coverage": null,
+   "enough_samples": false
+  },
+  "GBPUSD|d1": {
+   "n_logged": 1,
+   "n_resolved": 0,
+   "n_directional": 0,
+   "n_neutral": 0,
+   "hit_rate": null,
+   "hit_ci95": [
+    null,
+    null
+   ],
+   "base_rate_always_one_side": null,
+   "up_rate": null,
+   "range_coverage": null,
+   "enough_samples": false
+  },
+  "USDCAD|d1": {
+   "n_logged": 1,
+   "n_resolved": 0,
+   "n_directional": 0,
+   "n_neutral": 0,
+   "hit_rate": null,
+   "hit_ci95": [
+    null,
+    null
+   ],
+   "base_rate_always_one_side": null,
+   "up_rate": null,
+   "range_coverage": null,
+   "enough_samples": false
+  },
+  "USDJPY|d1": {
+   "n_logged": 1,
+   "n_resolved": 0,
+   "n_directional": 0,
+   "n_neutral": 0,
+   "hit_rate": null,
+   "hit_ci95": [
+    null,
+    null
+   ],
+   "base_rate_always_one_side": null,
+   "up_rate": null,
+   "range_coverage": null,
+   "enough_samples": false
+  },
+  "XAUUSD|d1": {
+   "n_logged": 1,
+   "n_resolved": 0,
+   "n_directional": 0,
+   "n_neutral": 0,
+   "hit_rate": null,
+   "hit_ci95": [
+    null,
+    null
+   ],
+   "base_rate_always_one_side": null,
+   "up_rate": null,
+   "range_coverage": null,
+   "enough_samples": false
+  },
+  "ALL|d1": {
+   "n_logged": 6,
+   "n_resolved": 0,
+   "n_directional": 0,
+   "n_neutral": 0,
+   "hit_rate": null,
+   "hit_ci95": [
+    null,
+    null
+   ],
+   "base_rate_always_one_side": null,
+   "up_rate": null,
+   "range_coverage": null,
+   "enough_samples": false
+  }
+ }
 }
