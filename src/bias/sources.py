@@ -18,6 +18,7 @@ import pandas as pd
 import requests
 
 NY = ZoneInfo("America/New_York")
+BROWSER_UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 arafat-fx-agent")
 
 
 class SourceError(Exception):
@@ -80,7 +81,7 @@ def fetch_fred_releases(api_key: str, now: datetime, days: int, get=requests.get
 
 
 def events_from_fred(releases: list[dict], cfg_events: dict) -> list[dict]:
-    """আগ্রহের রিলিজ বেছে আনুমানিক UTC সময়ে (নিউ ইয়র্কের সময় থেকে, DST মেনে) ইভেন্ট বানায়।"""
+    """(FOMC এখানে নয়: FRED-এর FOMC তারিখ ভরসাযোগ্য নয়, তাই কনফিগের ক্যালেন্ডার ব্যবহার হয়) আগ্রহের রিলিজ বেছে আনুমানিক UTC সময়ে (নিউ ইয়র্কের সময় থেকে, DST মেনে) ইভেন্ট বানায়।"""
     out, seen = [], set()
     for r in releases:
         for part, spec in cfg_events["fred_releases"].items():
@@ -96,54 +97,129 @@ def events_from_fred(releases: list[dict], cfg_events: dict) -> list[dict]:
     return sorted(out, key=lambda e: e["utc"])
 
 
-# ---------- Forex Factory (ঐচ্ছিক, অনানুষ্ঠানিক) ----------
+# ---------- Forex Factory (অনানুষ্ঠানিক ফিড; ফোরকাস্ট ও আগের মানের জন্য) ----------
 
-def parse_ff(payload: list, min_impact: str = "High") -> list[dict]:
-    """শুধু নাম, মুদ্রা, সময়, গুরুত্ব রাখে (ফোরকাস্ট/আগের মান ইচ্ছা করেই বাদ)।"""
+def _short(v) -> str | None:
+    t = str(v).strip() if v is not None else ""
+    return t[:14] if t else None
+
+
+def parse_ff(payload: list, min_impact_usd: str = "Medium") -> list[dict]:
+    """নাম, মুদ্রা, সময়, গুরুত্ব, ফোরকাস্ট, আগের মান রাখে। USD-এর জন্য min_impact_usd+, অন্য মুদ্রায় শুধু High।"""
     rank = {"Low": 1, "Medium": 2, "High": 3}
     out = []
     for e in payload if isinstance(payload, list) else []:
         try:
-            imp = e["impact"]
-            if rank.get(imp, 0) < rank[min_impact]:
+            imp, ccy = e["impact"], str(e["country"])[:3].upper()
+            need = rank[min_impact_usd] if ccy == "USD" else rank["High"]
+            if rank.get(imp, 0) < need:
                 continue
             t = datetime.fromisoformat(e["date"]).astimezone(timezone.utc)
-            out.append({"title": str(e["title"])[:80], "currency": str(e["country"])[:3].upper(), "impact": imp,
-                        "utc": t, "approx": False, "source": "FF"})
+            out.append({"title": str(e["title"])[:80], "currency": ccy, "impact": imp, "utc": t, "approx": False,
+                        "source": "FF", "forecast": _short(e.get("forecast")), "previous": _short(e.get("previous"))})
         except (KeyError, ValueError, TypeError):
             continue
     return sorted(out, key=lambda e: e["utc"])
 
 
-def fetch_ff(url: str, min_impact: str, get=requests.get) -> list[dict]:
-    return parse_ff(_get_json(get, url, None, None), min_impact)
+def fetch_ff(url: str, min_impact_usd: str, get=requests.get) -> list[dict]:
+    return parse_ff(_get_json(get, url, None, None), min_impact_usd)
 
 
 _CATS = [("cpi", ("cpi", "consumer price")), ("nfp", ("non-farm", "nonfarm", "employment situation", "payroll")),
          ("gdp", ("gdp", "gross domestic")), ("pce", ("pce", "personal income")), ("ppi", ("ppi", "producer price")),
-         ("retail", ("retail sales",)), ("jolts", ("jolts", "job openings")), ("fomc", ("fomc", "federal funds rate"))]
+         ("retail", ("retail sales",)), ("jolts", ("jolts", "job openings")), ("fomc", ("fomc", "federal funds rate")),
+         ("unemp", ("unemployment rate", "unemployment claims", "jobless claims"))]
 
 
 def event_category(title: str) -> str | None:
     t = title.lower()
+    if "adp" in t:                                   # ADP বেসরকারি অনুমান, সরকারি NFP নয়
+        return None
     for cat, keys in _CATS:
         if any(k in t for k in keys):
             return cat
     return None
 
 
-def merge_events(primary: list[dict], extra: list[dict], now: datetime, days: int) -> list[dict]:
-    """দুই তালিকা জোড়া। একই তারিখ ও একই ধরনের USD ইভেন্ট থাকলে ঠিক-সময়ওয়ালা (FF) রাখা হয়।"""
-    end = now + timedelta(days=days)
-    seen: dict = {}
-    for e in primary + extra:
-        if not (now - timedelta(hours=2) <= e["utc"] <= end):
+def classify(e: dict, cfg_events: dict) -> dict:
+    """ইভেন্টে category ও level (high = লাল, medium = কমলা) বসায়। না মিললে level = None।"""
+    cat = event_category(e["title"])
+    lv = cfg_events.get("levels", {})
+    level = None
+    if e.get("currency") == "USD" and cat in lv.get("high", []):
+        level = "high"
+    elif e.get("impact") == "High":
+        level = "high"
+    elif e.get("currency") == "USD" and (cat in lv.get("medium", []) or e.get("impact") == "Medium"):
+        level = "medium"
+    e["category"], e["level"] = cat, level
+    return e
+
+
+def events_from_schedule(dates: list[str], time_et: str, now: datetime, days: int) -> list[dict]:
+    """FOMC-র সিদ্ধান্তের দিন (কনফিগের তালিকা থেকে), নিউ ইয়র্কের সময় থেকে UTC।"""
+    hh, mm = (int(x) for x in time_et.split(":"))
+    out, end = [], now + timedelta(days=days)
+    for ds in dates:
+        try:
+            d = datetime.strptime(ds, "%Y-%m-%d")
+        except ValueError:
             continue
+        t = datetime(d.year, d.month, d.day, hh, mm, tzinfo=NY).astimezone(timezone.utc)
+        if now - timedelta(hours=2) <= t <= end:
+            out.append({"title": "FOMC Statement", "currency": "USD", "impact": "High", "utc": t, "approx": True,
+                        "source": "Fed-ক্যালেন্ডার"})
+    return out
+
+
+def merge_events(primary: list[dict], extra: list[dict], now: datetime, days: int) -> list[dict]:
+    """FRED/ক্যালেন্ডারের আনুমানিক ইভেন্ট (primary) + FF (extra)। FF-এ একই তারিখ ও ধরনের ইভেন্ট থাকলে আনুমানিকটা বাদ।"""
+    end = now + timedelta(days=days)
+    win = lambda e: now - timedelta(hours=2) <= e["utc"] <= end
+    ff = [e for e in extra if win(e)]
+    covered = {(event_category(e["title"]), e["utc"].date(), e["currency"]) for e in ff if event_category(e["title"])}
+    out, seen = [], set()
+    for e in ff + [x for x in primary if win(x)]:
         cat = event_category(e["title"])
-        key = (cat, e["utc"].date(), e["currency"]) if cat else (e["title"], e["utc"], e["currency"])
-        if key not in seen or (seen[key]["approx"] and not e["approx"]):
-            seen[key] = e
-    return sorted(seen.values(), key=lambda e: e["utc"])
+        if e["approx"] and cat and (cat, e["utc"].date(), e["currency"]) in covered:
+            continue
+        k = (e["title"], e["utc"], e["currency"])
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append(e)
+    return sorted(out, key=lambda e: e["utc"])
+
+
+# ---------- আগের মান (FRED, হেডলাইন) ----------
+
+def previous_value(spec: dict, s: pd.Series) -> dict | None:
+    """সর্বশেষ প্রকাশিত মান, spec.transform অনুযায়ী (yoy / mom / diff / level)।"""
+    s = s.dropna()
+    if len(s) < 2:
+        return None
+    last_d, last = s.index[-1], float(s.iloc[-1])
+    tr = spec["transform"]
+    if tr == "yoy":
+        target = last_d - pd.Timedelta(days=365)
+        i = int(abs(s.index - target).argmin())
+        if abs((s.index[i] - target).days) > 20 or float(s.iloc[i]) == 0:
+            return None
+        v = (last / float(s.iloc[i]) - 1) * 100
+    elif tr == "mom":
+        v = (last / float(s.iloc[-2]) - 1) * 100
+    elif tr == "diff":
+        v = last - float(s.iloc[-2])
+    else:
+        v = last
+    unit = spec.get("unit", "")
+    text = (f"{v:+,.0f}K" if unit == "K" else f"{v / 1000:.2f}M" if unit == "Mk" else f"{v:.1f}%" if unit == "%" else f"{v:.2f}")
+    return {"text": text, "period": last_d.strftime("%Y-%m"), "label": spec.get("label", "")}
+
+
+def fetch_previous(spec: dict, api_key: str, now: datetime, get=requests.get) -> dict | None:
+    return previous_value(spec, fetch_fred(spec["id"], api_key, 500, now, get))
 
 
 # ---------- CFTC COT (গোল্ড) ----------
@@ -220,12 +296,12 @@ def fetch_news(feeds: list[dict], now: datetime, max_items: int, max_age_days: i
     items, notes = [], []
     for f in feeds:
         try:
-            r = get(f["url"], timeout=20, headers={"User-Agent": "arafat-fx-agent"})
+            r = get(f["url"], timeout=20, headers={"User-Agent": BROWSER_UA, "Accept": "application/rss+xml, application/xml, text/xml, */*"})
             if r.status_code != 200:
                 raise SourceError(f"HTTP {r.status_code}")
             items += parse_rss(r.text, f["name"])
         except Exception as e:
-            notes.append(f"খবর ({f['name']}): {type(e).__name__}")
+            notes.append(f"খবর ({f['name']}): {type(e).__name__}: {str(e)[:60]}")
     cut = now - timedelta(days=max_age_days)
     items = [i for i in items if cut <= i["published"] <= now + timedelta(hours=1)]
     items.sort(key=lambda i: i["published"], reverse=True)

@@ -182,3 +182,23 @@ details.hrow summary::-webkit-details-marker { display: none; }
 .fdet .warn { margin-top: 0; }
 .ntitle { white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 380px) { .tabs a span { font-size: 10px; } }
+
+/* ইভেন্ট: গুরুত্ব ও বিস্তারিত */
+.row.ev { gap: 10px; border-left: 4px solid transparent; }
+.row.ev-high { border-left-color: var(--loss); }
+.row.ev-medium { border-left-color: #e0a040; }
+.ev-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px; background: #e0a040; }
+.ev-high .ev-dot { background: var(--loss); box-shadow: 0 0 0 3px rgba(232,118,108,.22); }
+.ev-high .t { color: #f3b0aa; }
+.ev-i { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--brass-dim); background: transparent; color: var(--brass);
+  font: italic 700 18px/1 Georgia, serif; cursor: pointer; }
+.ev-i:active, .ev-i[aria-expanded="true"] { background: var(--panel-2); }
+.ev-det { padding: 12px 16px 16px; background: var(--panel-2); border-top: 1px solid var(--line); }
+.ev-grid { display: grid; gap: 6px; }
+.ev-kv { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.ev-kv .k { color: var(--muted); } .ev-kv .v { font-weight: 700; }
+.ev-h { margin-top: 12px; font-weight: 700; color: var(--brass); font-size: 14px; }
+.ev-eff { margin-top: 8px; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.5; border: 1px solid var(--line); }
+.ev-eff.up { border-color: #2f6650; background: rgba(111,199,160,.08); }
+.ev-eff.dn { border-color: #7a3d38; background: rgba(232,118,108,.08); }
+.ev-note { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }

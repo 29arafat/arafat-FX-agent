@@ -72,8 +72,11 @@ def fund_components(fund: dict, pair: str, cfg: dict, now: datetime, notes: list
         s = fund.get(name)
         if s is None:
             return None
-        if not _fresh(s, now, mx["fred"]) or len(s) <= n:
-            notes.append(f"{name}: ডেটা পুরনো বা অপর্যাপ্ত, বাদ")
+        lim = mx.get(name, mx["fred"])
+        if not _fresh(s, now, lim) or len(s) <= n:
+            age = (pd.Timestamp(now).tz_localize(None) - s.index[-1]).days if len(s) else None
+            notes.append(f"{name}: ডেটা পুরনো বা অপর্যাপ্ত, বাদ (সর্বশেষ মান {age} দিন আগের, সীমা {lim} দিন, সংখ্যা {len(s)})" if age is not None
+                         else f"{name}: ডেটা খালি, বাদ")
             return None
         return s
 
@@ -191,7 +194,7 @@ def build_horizon(pair: str, hkey: str, comps: dict, frames: dict, cfg: dict, no
         warnings.append("ডেটা অপর্যাপ্ত, তাই নিরপেক্ষ দেখানো হচ্ছে")
     end = now + timedelta(hours=h["hours"])
     for e in events:
-        if now <= e["utc"] <= end and e.get("impact") == "High" and e["currency"] in ("USD",) + tuple(_pair_ccy(pair)):
+        if now <= e["utc"] <= end and (e.get("level") == "high" or (e.get("level") is None and e.get("impact") == "High")) and e["currency"] in ("USD",) + tuple(_pair_ccy(pair)):
             local = (e["utc"] + timedelta(hours=cfg["notify"]["display_utc_offset_hours"])).strftime("%d-%m %H:%M")
             warnings.append(bn.event_warning(e["title"], local, e.get("approx", False)))
     for r in rows:

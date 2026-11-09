@@ -1,8 +1,0 @@
-/sw.js
-  Cache-Control: no-cache
-/manifest.webmanifest
-  Cache-Control: no-cache
-/*
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: no-referrer
-  X-Robots-Tag: noindex, nofollow

@@ -39,7 +39,7 @@ def test_config_bias_consistent():
         assert p in CFG["pairs"] and p in b["usd_sign"]
     assert set(b["full_fundamentals"]) <= set(b["pairs"])
     assert b["confidence_bands"][0] == b["neutral_band"]
-    assert b["sources"]["events"]["forex_factory"]["enabled"] is False       # ডিফল্ট বন্ধ
+    assert b["sources"]["events"]["forex_factory"]["enabled"] is True        # ফোরকাস্টের জন্য চালু; ব্যর্থ হলে বাকিটা চলে
 
 
 # ---------- উপাদান ----------
@@ -203,16 +203,90 @@ def test_events_from_fred_dst():
     assert S.events_from_fred([{"name": "Something Else", "date": datetime(2026, 11, 12).date()}], ev) == []
 
 
-def test_parse_ff_keeps_only_safe_fields_and_dedupes():
+def test_parse_ff_fields_and_impact_rules():
     payload = [{"title": "CPI m/m", "country": "USD", "date": "2026-11-12T08:30:00-05:00", "impact": "High",
-                "forecast": "0.3%", "previous": "0.4%"},
+                "forecast": "0.3%", "previous": "0.4%", "url": "https://x"},
+               {"title": "Retail Sales m/m", "country": "USD", "date": "2026-11-13T08:30:00-05:00", "impact": "Medium", "forecast": "", "previous": "0.1%"},
+               {"title": "UK thing", "country": "GBP", "date": "2026-11-12T09:00:00-05:00", "impact": "Medium"},
                {"title": "Minor", "country": "USD", "date": "2026-11-12T09:00:00-05:00", "impact": "Low"}, {"bad": 1}]
-    ff = S.parse_ff(payload, "High")
-    assert len(ff) == 1 and "forecast" not in ff[0] and "previous" not in ff[0] and ff[0]["utc"].hour == 13
-    fred = S.events_from_fred([{"name": "Consumer Price Index", "date": datetime(2026, 11, 12).date()}], CFG["bias"]["sources"]["events"])
+    ff = S.parse_ff(payload, "Medium")
+    assert [e["title"] for e in ff] == ["CPI m/m", "Retail Sales m/m"]          # GBP Medium ও Low বাদ
+    assert ff[0]["forecast"] == "0.3%" and ff[0]["previous"] == "0.4%" and ff[0]["utc"].hour == 13
+    assert ff[1]["forecast"] is None and "url" not in ff[0]
+    assert len(S.parse_ff(payload, "High")) == 1
+
+
+def test_merge_prefers_ff_and_keeps_multiple_ff_entries():
+    ev = CFG["bias"]["sources"]["events"]
     now = datetime(2026, 11, 9, tzinfo=timezone.utc)
+    fred = S.events_from_fred([{"name": "Consumer Price Index", "date": datetime(2026, 11, 12).date()}], ev)
+    ff = S.parse_ff([{"title": "CPI m/m", "country": "USD", "date": "2026-11-12T08:30:00-05:00", "impact": "High"},
+                     {"title": "Core CPI m/m", "country": "USD", "date": "2026-11-12T08:30:00-05:00", "impact": "High"}], "Medium")
     m = S.merge_events(fred, ff, now, 7)
-    assert len(m) == 1 and m[0]["approx"] is False and m[0]["source"] == "FF"
+    assert len(m) == 2 and all(e["source"] == "FF" and not e["approx"] for e in m)
+    assert len(S.merge_events(fred, [], now, 7)) == 1                           # FF না এলে আনুমানিকটা থাকে
+
+
+def test_fomc_only_on_meeting_days_not_fred_spam():
+    ev = CFG["bias"]["sources"]["events"]
+    assert not any("FOMC" in k for k in ev["fred_releases"])
+    spam = [{"name": "FOMC Press Release", "date": datetime(2026, 11, d).date()} for d in range(9, 16)]
+    assert S.events_from_fred(spam, ev) == []
+    now = datetime(2026, 11, 9, tzinfo=timezone.utc)
+    assert S.events_from_schedule(ev["fomc_dates"], ev["fomc_time_et"], now, 7) == []               # এই সপ্তাহে বৈঠক নেই
+    e = S.events_from_schedule(ev["fomc_dates"], ev["fomc_time_et"], datetime(2026, 12, 7, tzinfo=timezone.utc), 7)
+    assert len(e) == 1 and (e[0]["utc"].month, e[0]["utc"].day, e[0]["utc"].hour) == (12, 9, 19)       # শীতকাল: ১৪:০০ ET = ১৯:০০ UTC
+
+
+def test_classify_levels_and_adp():
+    ev = CFG["bias"]["sources"]["events"]
+    c = lambda t, imp="Medium", ccy="USD": S.classify({"title": t, "currency": ccy, "impact": imp}, ev)
+    assert c("CPI m/m")["level"] == "high" and c("Non-Farm Employment Change")["level"] == "high"
+    assert c("PPI m/m")["level"] == "medium" and c("Unemployment Claims")["level"] == "medium"
+    assert c("ADP Non-Farm Employment Change")["level"] == "medium" and c("ADP Non-Farm Employment Change")["category"] is None
+    assert c("Fed Chair Speaks", "High")["level"] == "high" and c("Something", "Low")["level"] is None
+    assert c("ECB Rate", "Medium", "EUR")["level"] is None
+
+
+def test_previous_value_transforms():
+    idx = pd.date_range("2025-01-01", periods=14, freq="MS")
+    cpi = pd.Series(np.linspace(300, 312, 14), index=idx)
+    yoy = S.previous_value({"transform": "yoy", "unit": "%", "label": "x"}, cpi)
+    assert yoy["text"] == "3.7%" and yoy["period"] == "2026-02"
+    nfp = S.previous_value({"transform": "diff", "unit": "K"}, pd.Series([150000.0, 150151.0], index=idx[:2]))
+    assert nfp["text"] == "+151K"
+    assert S.previous_value({"transform": "level", "unit": "%"}, pd.Series([4.1, 4.2], index=idx[:2]))["text"] == "4.2%"
+    assert S.previous_value({"transform": "yoy", "unit": "%"}, cpi.iloc[:5]) is None        # বছরের আগের মান নেই
+    assert S.previous_value({"transform": "mom", "unit": "%"}, pd.Series([100.0, 101.0], index=idx[:2]))["text"] == "1.0%"
+
+
+def test_event_effect_rules_and_basis():
+    up = bn.event_effect("cpi", "down", "0.3%", "0.4%")
+    assert up["higher"]["dir"] == "DOWN" and up["lower"]["dir"] == "UP" and up["basis"] == "forecast"
+    nf = bn.event_effect("cpi", "down", None, "0.4%")
+    assert nf["basis"] == "previous" and "দুর্বল" in nf["basis_bn"]
+    un = bn.event_effect("unemp", "up", "4.2%", "4.1%")
+    assert un["higher"]["dir"] == "UP" and un["lower"]["dir"] == "DOWN"
+    assert bn.event_effect("fomc", "down", None, None)["basis"] == "text"
+    assert bn.event_effect(None, None, None, None) is None and bn.event_effect("xyz", "down", None, None) is not None
+    assert "ভবিষ্যদ্বাণী" not in up["caveat_bn"] or "নয়" in up["caveat_bn"]
+
+
+def test_gather_fund_fred_prev_and_ff_failure_isolated():
+    now = datetime(2026, 11, 9, 8, 0, tzinfo=timezone.utc)
+    obs = [{"date": (pd.Timestamp("2025-09-01") + pd.DateOffset(months=i)).strftime("%Y-%m-%d"), "value": str(300 + i * 0.5)} for i in range(14)]
+
+    def get(url, **kw):
+        if "releases/dates" in url:
+            return _Resp(200, js={"release_dates": [{"release_name": "Consumer Price Index", "date": "2026-11-12"}]})
+        if "series/observations" in url:
+            return _Resp(200, js={"observations": obs})
+        return _Resp(500)
+    fund, events, notes = R.gather_fund(CFG, "K", now, get)
+    cpi = [e for e in events if e["category"] == "cpi"]
+    assert len(cpi) == 1 and cpi[0]["fred_prev"]["text"].endswith("%") and cpi[0]["level"] == "high"
+    assert any("Forex Factory" in n for n in notes)
+    assert not any(e["title"] == "FOMC Statement" for e in events)
 
 
 RSS = """<?xml version="1.0"?><rss version="2.0"><channel>
@@ -349,6 +423,20 @@ def test_wilson_and_stats_baseline():
 
 def _data():
     return {"XAUUSD": {"H1": _df(seed=1, trend=1.0)}, "EURUSD": {"H1": _df(seed=2, trend=-1.0)}}
+
+
+def test_event_output_has_info_for_ui():
+    cfg = load_config()
+    cfg["bias"]["pairs"] = ["XAUUSD"]
+    now = datetime(2026, 11, 9, 8, 12, tzinfo=timezone.utc)
+    ev = [{"title": "CPI m/m", "currency": "USD", "impact": "High", "utc": now + timedelta(hours=3), "approx": False,
+           "source": "FF", "forecast": "0.3%", "previous": "0.4%"},
+          {"title": "FOMC Statement", "currency": "USD", "impact": "High", "utc": now + timedelta(hours=5), "approx": True, "source": "x"},
+          {"title": "Nothing", "currency": "USD", "impact": "Low", "utc": now + timedelta(hours=6), "approx": False, "source": "FF"}]
+    res, _ = R.build_result(cfg, {"XAUUSD": {"H1": _data()["XAUUSD"]["H1"]}}, {}, ev, [], [], NOW)
+    out = res["events"]
+    assert len(out) == 2 and out[0]["info"]["level"] == "high" and out[0]["info"]["forecast"] == "0.3%"
+    assert out[0]["info"]["effect"]["higher"]["dir"] == "DOWN" and out[1]["info"]["effect"]["basis"] == "text"
 
 
 def test_end_to_end_build_write_and_no_secrets(tmp_path):

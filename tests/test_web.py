@@ -71,7 +71,7 @@ def test_info_popup_wired_safely():
     assert "info-btn" in js and "openInfo" in js and 'role: "dialog"' in js and '"aria-modal": "true"' in js
     assert "Escape" in js and "modal-bg" in css and "body.modal-open" in css
     assert "innerHTML" not in js
-    assert 'VERSION = "fx-v4"' in read("sw.js")        # app.js বদলেছে, তাই ক্যাশ সংস্করণ বেড়েছে
+    assert 'VERSION = "fx-v5"' in read("sw.js")        # app.js বদলেছে, তাই ক্যাশ সংস্করণ বেড়েছে
 
 
 def test_fundamentals_tab_wired_safely():
@@ -85,3 +85,9 @@ def test_fundamentals_tab_wired_safely():
     assert "disclaimer_bn" in js and "শ্যাডো মোড" in js
     # বায়াস আনা ব্যর্থ হলেও সিগন্যালের অংশ ভাঙে না: আলাদা catch
     assert re.search(r"function refreshBias\(\).*?\.catch\(", js, re.S)
+
+
+def test_event_info_ui_wired_safely():
+    js, css = read("app.js"), read("style.css")
+    assert "evDetail" in js and "ev-i" in js and "ev-high" in css and "ev-medium" in css
+    assert "innerHTML" not in js and "aria-expanded" in js

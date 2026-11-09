@@ -6,7 +6,7 @@
   var KEY = "fx-cache-v1";
   var S = { signals: [], status: null, fetchedAt: null, error: null, loading: false, period: "all",
             hist: { pair: "all", res: "all", tf: "all" },
-            bias: null, biasStats: null, biasAt: null, biasState: "loading", fundPair: "XAUUSD" };
+            bias: null, biasStats: null, biasAt: null, biasState: "loading", fundPair: "XAUUSD", evOpen: {} };
   var BKEY = "fx-bias-cache-v1";
 
   // ---------- ছোট সহায়ক ----------
@@ -539,14 +539,49 @@
     return h("section", { class: "fcard" }, kids);
   }
 
+  function evDetail(e) {
+    var i = e.info || {}, box = h("div", { class: "ev-det" });
+    var rows = [];
+    rows.push(["গুরুত্ব", i.level_bn || "-"]);
+    rows.push(["প্রিভিয়াস (আগের মান)", i.previous ? i.previous + (i.previous_src === "FRED" && i.fred_previous ? " (" + i.fred_previous.period + ")" : "") : "পাওয়া যায়নি"]);
+    rows.push(["সম্ভাব্য (ফোরকাস্ট)", i.forecast || "পাওয়া যায়নি"]);
+    box.appendChild(h("div", { class: "ev-grid" }, rows.map(function (r) {
+      return h("div", { class: "ev-kv" }, h("span", { class: "k", text: r[0] }), h("span", { class: "v num", text: r[1] }));
+    })));
+    if (i.previous_src === "FRED" && i.fred_previous && i.fred_previous.label) box.appendChild(h("p", { class: "ev-note", text: "আগের মান: " + i.fred_previous.label + " (FRED)" }));
+    if (!i.forecast && e.title !== "FOMC Statement") box.appendChild(h("p", { class: "ev-note", text: "ফোরকাস্ট আসেনি (Forex Factory ফিড পাওয়া না গেলে বা সময় এখনো না হলে এমন হয়)।" }));
+    var ef = i.effect;
+    if (ef) {
+      box.appendChild(h("div", { class: "ev-h", text: "গোল্ডে সম্ভাব্য প্রভাব" }));
+      [ef.higher, ef.lower].forEach(function (x) {
+        box.appendChild(h("div", { class: "ev-eff " + (x.dir === "UP" ? "up" : "dn"), text: x.text }));
+      });
+      box.appendChild(h("p", { class: "ev-note", text: "ভিত্তি: " + (ef.basis_bn || "") }));
+      box.appendChild(h("p", { class: "ev-note", text: ef.caveat_bn || "" }));
+    } else {
+      box.appendChild(h("p", { class: "ev-note", text: "এই ইভেন্টের জন্য গোল্ড-প্রভাবের নিয়ম নেই। খবরের সময় দাম লাফাতে পারে, সতর্ক থাকুন।" }));
+    }
+    return box;
+  }
+
   function fundEvents(b) {
-    var list = (b.events || []).slice(0, 8);
+    var list = (b.events || []).slice(0, 10);
     var v = [h("h2", { text: "আসন্ন গুরুত্বপূর্ণ ইভেন্ট (সৌদি সময়)" })];
     if (!list.length) { v.push(h("p", { class: "sub", text: "আগামী ৭ দিনে তালিকাভুক্ত কোনো গুরুত্বপূর্ণ ইভেন্ট পাওয়া যায়নি (বা সোর্স থেকে আসেনি)।" })); return v; }
-    v.push(h("div", { class: "rows" }, list.map(function (e) {
-      return h("div", { class: "row" }, h("div", { class: "l" }, h("div", { class: "t", text: e.title }), h("div", { class: "s", text: e.currency + (e.approx ? " · আনুমানিক সময়" : "") })),
-        h("div", { class: "r" }, h("div", { class: "t num", text: e.local || "" })));
-    })));
+    v.push(h("p", { class: "sub", text: "লাল = অত্যন্ত গুরুত্বপূর্ণ, কমলা = মাঝারি। বিস্তারিত দেখতে i চাপুন।" }));
+    var wrap = h("div", { class: "rows" });
+    list.forEach(function (e, idx) {
+      var lvl = (e.info && e.info.level) || "medium", key = e.utc + "|" + e.title, open = !!S.evOpen[key];
+      var btn = h("button", { class: "ev-i", type: "button", "aria-label": e.title + " বিস্তারিত", "aria-expanded": open ? "true" : "false",
+        onclick: function () { S.evOpen[key] = !S.evOpen[key]; render(); } }, "i");
+      var top = h("div", { class: "row ev ev-" + lvl },
+        h("div", { class: "l" }, h("div", { class: "t" }, h("span", { class: "ev-dot" }), e.title),
+          h("div", { class: "s", text: e.currency + (e.approx ? " · আনুমানিক সময়" : "") + (lvl === "high" ? " · অত্যন্ত গুরুত্বপূর্ণ" : "") })),
+        h("div", { class: "r" }, h("div", { class: "t num", text: e.local || "" })), btn);
+      wrap.appendChild(top);
+      if (open) wrap.appendChild(evDetail(e));
+    });
+    v.push(wrap);
     return v;
   }
 

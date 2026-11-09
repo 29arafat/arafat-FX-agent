@@ -64,3 +64,39 @@ def summary(hkey: str, bias: str, conf: str) -> str:
 def event_warning(title: str, when_local: str, approx: bool) -> str:
     t = f"{when_local}" + (" (আনুমানিক)" if approx else "")
     return f"{t} {title}: খবরের সময় দাম হঠাৎ লাফাতে পারে, দামের সীমা ছাড়িয়ে যেতে পারে"
+
+
+# ---------- ইভেন্টের গোল্ড-প্রভাব (সাধারণ প্রবণতা, ভবিষ্যদ্বাণী নয়) ----------
+
+LEVEL_BN = {"high": "অত্যন্ত গুরুত্বপূর্ণ", "medium": "মাঝারি গুরুত্ব"}
+EFFECT_CAVEAT_BN = ("এটা প্রাথমিক প্রতিক্রিয়ার সাধারণ প্রবণতা। বাস্তবে দাম অনেক সময় উল্টে যায়, "
+                    "তাই এটা ট্রেডের সংকেত নয়।")
+
+
+def event_effect(cat: str | None, rule: str | None, forecast: str | None, previous: str | None) -> dict | None:
+    """rule = 'down' হলে আসল ফল বেশি হলে গোল্ড চাপে, 'up' হলে বেশি হলে গোল্ডের পক্ষে। না জানলে None।"""
+    if not cat or rule not in ("down", "up"):
+        return None
+    if cat == "fomc":
+        hi, lo = ("কড়া সুর (সুদ বাড়ানো/ধরে রাখার কড়া ইঙ্গিত)", "নরম সুর (সুদ কমানোর ইঙ্গিত)")
+        up_t, dn_t = "ডলার ও ইয়িল্ড বাড়তে পারে", "ডলার ও ইয়িল্ডে চাপ পড়তে পারে"
+        basis, basis_bn = "text", "ভাষার সুরের ওপর নির্ভর করে, সংখ্যা নেই"
+    else:
+        hi, lo = "ফোরকাস্টের চেয়ে বেশি এলে", "ফোরকাস্টের চেয়ে কম এলে"
+        if cat == "unemp":
+            up_t, dn_t = "অর্থনীতি দুর্বল ধরা হয়, সুদ কমার আশা বাড়ে", "শ্রমবাজার শক্ত ধরা হয়, সুদ কমার আশা কমে"
+        else:
+            up_t, dn_t = "ডলার ও ইয়িল্ড বাড়তে পারে", "ডলার ও ইয়িল্ডে চাপ পড়তে পারে"
+        if forecast:
+            basis, basis_bn = "forecast", "ফোরকাস্টের সাথে আসল ফল তুলনা করে (বাজার এভাবেই নড়ে)"
+        else:
+            basis, basis_bn = "previous", "ফোরকাস্ট পাওয়া যায়নি, তাই আগের মানের সাথে তুলনা (দুর্বল সূত্র)"
+            hi, lo = "আগের মানের চেয়ে বেশি এলে", "আগের মানের চেয়ে কম এলে"
+    up_g, dn_g = "গোল্ডে সাধারণত সমর্থন (↑)", "গোল্ডে সাধারণত চাপ (↓)"
+    if rule == "down":       # বেশি হলে ডলার/ইয়িল্ড বাড়ে → গোল্ডে চাপ
+        higher = {"dir": "DOWN", "text": f"{hi}: {up_t}, {dn_g}"}
+        lower = {"dir": "UP", "text": f"{lo}: {dn_t}, {up_g}"}
+    else:                    # বেশি হলে অর্থনীতি দুর্বল ধরা হয় → গোল্ডের পক্ষে
+        higher = {"dir": "UP", "text": f"{hi}: {up_t}, {up_g}"}
+        lower = {"dir": "DOWN", "text": f"{lo}: {dn_t}, {dn_g}"}
+    return {"higher": higher, "lower": lower, "basis": basis, "basis_bn": basis_bn, "caveat_bn": EFFECT_CAVEAT_BN}

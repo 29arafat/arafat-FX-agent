@@ -45,14 +45,29 @@ def gather_fund(cfg: dict, fred_key: str | None, now: datetime, get=requests.get
         fund["cot"] = sources.fetch_cot(c["url"], c["gold_code"], c["rows"], get)
     except sources.SourceError as e:
         notes.append(f"COT: {e}")
+    ev = sc["events"]
+    events += sources.events_from_schedule(ev.get("fomc_dates", []), ev.get("fomc_time_et", "14:00"), now, ev["window_days"])
     extra = []
-    ff = sc["events"]["forex_factory"]
+    ff = ev["forex_factory"]
     if ff["enabled"]:
         try:
-            extra = sources.fetch_ff(ff["url"], ff["min_impact"], get)
+            extra = sources.fetch_ff(ff["url"], ff.get("min_impact_usd", "Medium"), get)
         except sources.SourceError as e:
-            notes.append(f"Forex Factory: {e}")
-    events = sources.merge_events(events, extra, now, sc["events"]["window_days"])
+            notes.append(f"Forex Factory (ফোরকাস্ট আসবে না): {e}")
+    events = [sources.classify(e, ev) for e in sources.merge_events(events, extra, now, ev["window_days"])]
+    if fred_key:
+        cache: dict = {}
+        for e in events:
+            spec = ev.get("previous", {}).get(e.get("category"))
+            if not spec or e["currency"] != "USD":
+                continue
+            if e["category"] not in cache:
+                try:
+                    cache[e["category"]] = sources.fetch_previous(spec, fred_key, now, get)
+                except sources.SourceError as x:
+                    cache[e["category"]] = None
+                    notes.append(f"আগের মান ({e['category']}): {x}")
+            e["fred_prev"] = cache[e["category"]]
     return fund, events, notes
 
 
@@ -62,7 +77,11 @@ def build_result(cfg: dict, data: dict, fund: dict, events: list[dict], news: li
     b = cfg["bias"]
     res_pairs, h1s = {}, {}
     ccys = {"USD", "EUR", "GBP", "JPY", "AUD", "CAD"}
-    shown_events = [e for e in events if e.get("impact") == "High" and e["currency"] in ccys]
+    evc = b["sources"]["events"]
+    for e in events:
+        if "level" not in e:
+            sources.classify(e, evc)
+    shown_events = [e for e in events if e.get("level") in ("high", "medium") and e["currency"] in ccys][:14]
     for pair in b["pairs"]:
         if pair not in data:
             continue
@@ -76,9 +95,18 @@ def build_result(cfg: dict, data: dict, fund: dict, events: list[dict], news: li
                            "horizons": {h: model.build_horizon(pair, h, comps, frames, cfg, now, shown_events,
                                                               "full" if full else "limited") for h in b["horizons"]}}
     off = cfg["notify"]["display_utc_offset_hours"]
-    ev_out = [{"title": e["title"], "currency": e["currency"], "impact": e["impact"], "approx": e["approx"],
-               "source": e["source"], "utc": e["utc"].strftime("%Y-%m-%dT%H:%M:%SZ"),
-               "local": (e["utc"] + timedelta(hours=off)).strftime("%d-%m %H:%M")} for e in shown_events]
+    ev_out = []
+    for e in shown_events:
+        fp = e.get("fred_prev")
+        prev = e.get("previous") or (fp["text"] if fp else None)
+        info = {"level": e["level"], "level_bn": bn.LEVEL_BN[e["level"]], "forecast": e.get("forecast"), "previous": prev,
+                "previous_src": "FF" if e.get("previous") else ("FRED" if fp else None),
+                "fred_previous": ({"text": fp["text"], "period": fp["period"], "label": fp["label"]} if fp else None),
+                "effect": bn.event_effect(e.get("category"), evc.get("gold_effect", {}).get(e.get("category")),
+                                          e.get("forecast"), prev)}
+        ev_out.append({"title": e["title"], "currency": e["currency"], "impact": e["impact"], "approx": e["approx"],
+                       "source": e["source"], "utc": e["utc"].strftime("%Y-%m-%dT%H:%M:%SZ"),
+                       "local": (e["utc"] + timedelta(hours=off)).strftime("%d-%m %H:%M"), "info": info})
     news_out = [{"title": n["title"], "link": n["link"], "source": n["source"], "tags": n["tags"],
                  "published": n["published"].strftime("%Y-%m-%dT%H:%M:%SZ")} for n in news]
     out = {"version": 1, "bias_version": b["version"], "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),

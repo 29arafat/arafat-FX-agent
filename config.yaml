@@ -164,7 +164,7 @@ bias:
     min_samples_for_judgement: 100
     closed_overlap_skip: 0.5        # মেয়াদের এতটা বাজার বন্ধ থাকলে লগ নয়
   sources:
-    max_stale_days: {fred: 7, cot: 14}
+    max_stale_days: {fred: 7, cot: 14, usd: 14}   # usd: Fed-এর ব্রড ডলার ইনডেক্স সাপ্তাহিক আপডেট হয়, তাই বেশি সময়
     fred:
       series: {real_yield: DFII10, usd: DTWEXBGS, vix: VIXCLS}
       lookback_days: 60
@@ -189,8 +189,31 @@ bias:
         "Producer Price Index": {label: "US PPI", time_et: "08:30"}
         "Advance Monthly Sales for Retail": {label: "US Retail Sales", time_et: "08:30"}
         "Job Openings and Labor Turnover": {label: "US JOLTS", time_et: "10:00"}
-        "FOMC Press Release": {label: "FOMC Statement", time_et: "14:00"}
-      forex_factory:                 # ঐচ্ছিক, অনানুষ্ঠানিক ফিড; ডিফল্ট বন্ধ। শুধু নাম/সময়/গুরুত্ব রাখা হয়
-        enabled: false
+      fomc_dates: ["2026-01-28", "2026-03-18", "2026-04-29", "2026-06-17", "2026-07-29", "2026-09-16", "2026-10-28", "2026-12-09"]
+      fomc_time_et: "14:00"          # সিদ্ধান্তের দিন। Fed-এর অফিসিয়াল ক্যালেন্ডারের সাথে মিলিয়ে নিন; ২০২৭-এর তারিখ পরে যোগ করতে হবে
+      levels:                        # ইভেন্টের গুরুত্ব: high = লাল, medium = কমলা
+        high: [cpi, nfp, pce, fomc]
+        medium: [ppi, gdp, retail, unemp, jolts]
+      gold_effect:                   # আসল ফল ফোরকাস্টের চেয়ে বেশি হলে গোল্ড সাধারণত কোন দিকে (প্রাথমিক প্রতিক্রিয়ার প্রবণতা)
+        cpi: down
+        ppi: down
+        pce: down
+        nfp: down
+        gdp: down
+        retail: down
+        jolts: down
+        unemp: up
+        fomc: down                   # কড়া সুর (হকিশ) = বেশি
+      previous:                      # FRED থেকে সর্বশেষ প্রকাশিত মান (হেডলাইন)
+        cpi: {id: CPIAUCSL, transform: yoy, unit: "%", label: "হেডলাইন CPI, বার্ষিক"}
+        pce: {id: PCEPI, transform: yoy, unit: "%", label: "PCE মূল্যসূচক, বার্ষিক"}
+        ppi: {id: PPIFIS, transform: yoy, unit: "%", label: "PPI (ফাইনাল ডিমান্ড), বার্ষিক"}
+        nfp: {id: PAYEMS, transform: diff, unit: "K", label: "বেসরকারি-সহ মোট চাকরি, মাসিক পরিবর্তন"}
+        unemp: {id: UNRATE, transform: level, unit: "%", label: "বেকারত্বের হার"}
+        gdp: {id: A191RL1Q225SBEA, transform: level, unit: "%", label: "GDP প্রবৃদ্ধি, বার্ষিক হার"}
+        retail: {id: RSAFS, transform: mom, unit: "%", label: "রিটেইল সেলস, মাসিক"}
+        jolts: {id: JTSJOL, transform: level, unit: "Mk", label: "চাকরির শূন্যপদ"}
+      forex_factory:                 # অনানুষ্ঠানিক ফিড (ফোরকাস্ট/আগের মানের জন্য)। শুধু নাম, মুদ্রা, সময়, গুরুত্ব, ফোরকাস্ট, আগের মান রাখা হয়
+        enabled: true
         url: "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-        min_impact: High
+        min_impact_usd: Medium       # USD-এর জন্য Medium+, অন্য মুদ্রার জন্য শুধু High
