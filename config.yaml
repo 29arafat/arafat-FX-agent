@@ -116,3 +116,81 @@ storage:
 heartbeat:                    # অচলতার সতর্কতা
   stale_after_hours: 3        # শেষ রানের পর এর বেশি বিরতি হলে পরের রানে সতর্কতা
   daily_utc_hour: 5           # প্রতিদিন এই UTC ঘণ্টার পর প্রথম রানে "সিস্টেম সচল" বার্তা (সৌদি ০৮:xx)। না এলে বুঝবেন cron বন্ধ
+
+# ============================================================
+# মার্কেট বায়াস (ধাপ ১ক)। শ্যাডো মোড: শুধু দেখায় ও লগ করে, সিগন্যাল ইঞ্জিনে কোনো প্রভাব নেই।
+# সব ওজন/স্কেল আগে থেকে ঠিক করা। ফল দেখে টিউন করা নিষেধ। এটা ভবিষ্যদ্বাণী নয়, প্রেক্ষাপট-সূচক।
+# ============================================================
+bias:
+  version: "bias-v1-shadow"
+  pairs: [XAUUSD, EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD]
+  full_fundamentals: [XAUUSD]       # পূর্ণ ফান্ডামেন্টাল শুধু গোল্ডে; বাকিতে চার্ট + ডলার-ফ্যাক্টর ("সীমিত")
+  usd_sign:                         # ডলার শক্তিশালী হলে পেয়ার কোন দিকে (+১ = বাড়ে, −১ = কমে)
+    XAUUSD: -1
+    EURUSD: -1
+    GBPUSD: -1
+    AUDUSD: -1
+    USDJPY: 1
+    USDCAD: 1
+  neutral_band: 0.25                # |স্কোর| এর নিচে হলে "নিরপেক্ষ"
+  confidence_bands: [0.25, 0.45, 0.65]   # [0.25,0.45) কম, [0.45,0.65) মাঝারি, ≥0.65 বেশি
+  min_weight_share: 0.5             # পাওয়া উপাদানের ওজন-ভাগ এর কম হলে "ডেটা অপর্যাপ্ত", নিরপেক্ষ
+  range_k: 1.0                      # দামের সীমা = দাম ± range_k × (ATR × ঘণ্টার গুণক)
+  level_reach: 1.5                  # নিকটতম সুইং লেভেল এই গুণ সীমার মধ্যে থাকলে "লক্ষ্য" ধরা হয়
+  level_lookback: 120
+  scales:                           # স্কোর ±১ ধরার একক
+    trend_gap_atr: 1.0              # D1 EMA50−EMA200 ফারাক (ATR)
+    trend_fast_atr: 0.75            # H4/H1 EMA20−EMA50 ফারাক (ATR)
+    rsi_span: 20.0                  # (RSI−৫০)/এটি
+    ema_pos_atr: 2.0                # (দাম−EMA20) ATR-এ
+    change_obs: 5                   # FRED পরিবর্তন কত পর্যবেক্ষণে (দিন)
+    real_yield_bp: 15.0             # রিয়েল ইয়িল্ড পরিবর্তন (bp)
+    usd_pct: 1.0                    # ডলার ইনডেক্স পরিবর্তন (%)
+    vix_pts: 3.0                    # VIX পরিবর্তন (পয়েন্ট)
+    cot_oi_frac: 0.03               # ৪ সপ্তাহে নেট পজিশন পরিবর্তন ÷ ওপেন ইন্টারেস্ট
+  min_reason_score: 0.15            # এর কম হলে কারণের তালিকায় নয়
+  weights:
+    h4: {trend_h1: 0.30, rsi_h1: 0.20, ema_pos_h1: 0.15, trend_h4: 0.20, trend_d1: 0.15}
+    d1: {trend_d1: 0.25, trend_h4: 0.20, rsi_d1: 0.10, trend_h1: 0.10, real_yield: 0.15, usd: 0.15, vix: 0.05}
+    w1: {trend_d1: 0.30, rsi_d1: 0.10, real_yield: 0.20, usd: 0.15, cot: 0.15, vix: 0.10}
+  horizons:
+    h4: {hours: 4,   range_frame: H1, range_mult: 2.0,   level_frame: H4}
+    d1: {hours: 24,  range_frame: D1, range_mult: 1.0,   level_frame: H4}
+    w1: {hours: 168, range_frame: D1, range_mult: 2.236, level_frame: D1}
+  log:                              # স্বাধীন নমুনার জন্য প্রতিটি সময়সীমা নিজের পর্বে একবারই লগ হয়
+    anchor_utc_hour: {h4: 0, d1: 20, w1: 20}     # w1: রবিবার এই ঘণ্টায় শুরু
+    max_lag_hours: {h4: 1.5, d1: 4, w1: 12}   # পর্ব শুরুর এর বেশি পরে প্রথম রান হলে লগ নয়
+    max_entries: 4000
+    min_samples_for_judgement: 100
+    closed_overlap_skip: 0.5        # মেয়াদের এতটা বাজার বন্ধ থাকলে লগ নয়
+  sources:
+    max_stale_days: {fred: 7, cot: 14}
+    fred:
+      series: {real_yield: DFII10, usd: DTWEXBGS, vix: VIXCLS}
+      lookback_days: 60
+    cot:
+      url: "https://publicreporting.cftc.gov/resource/72hh-3qpy.json"
+      gold_code: "088691"
+      rows: 8
+    news:
+      max_items: 12
+      max_age_days: 4
+      feeds:
+        - {name: "Federal Reserve", url: "https://www.federalreserve.gov/feeds/press_all.xml"}
+        - {name: "ECB", url: "https://www.ecb.europa.eu/rss/press.html"}
+        - {name: "BLS", url: "https://www.bls.gov/feed/bls_latest.rss"}
+    events:
+      window_days: 7
+      fred_releases:                 # FRED রিলিজ-নামের অংশ → আনুমানিক সময় (নিউ ইয়র্ক)
+        "Consumer Price Index": {label: "US CPI", time_et: "08:30"}
+        "Employment Situation": {label: "US Non-Farm Payrolls", time_et: "08:30"}
+        "Gross Domestic Product": {label: "US GDP", time_et: "08:30"}
+        "Personal Income and Outlays": {label: "US PCE", time_et: "08:30"}
+        "Producer Price Index": {label: "US PPI", time_et: "08:30"}
+        "Advance Monthly Sales for Retail": {label: "US Retail Sales", time_et: "08:30"}
+        "Job Openings and Labor Turnover": {label: "US JOLTS", time_et: "10:00"}
+        "FOMC Press Release": {label: "FOMC Statement", time_et: "14:00"}
+      forex_factory:                 # ঐচ্ছিক, অনানুষ্ঠানিক ফিড; ডিফল্ট বন্ধ। শুধু নাম/সময়/গুরুত্ব রাখা হয়
+        enabled: false
+        url: "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+        min_impact: High
