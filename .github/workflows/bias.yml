@@ -1,0 +1,47 @@
+name: bias
+
+# মার্কেট বায়াস (শ্যাডো মোড): প্রতি H4 ক্যান্ডেল ক্লোজের পরে ডেটা আনে → বায়াস ও দামের সীমা → data ব্রাঞ্চে JSON।
+# সিগন্যাল workflow থেকে সম্পূর্ণ আলাদা (আলাদা ফাইল, আলাদা concurrency)। সিগন্যালে কোনো প্রভাব নেই।
+# সময় এমন যে signals workflow-এর (৭, ২৭, ৪৭ মিনিট) সঙ্গে API রেট-লিমিটে ধাক্কা না লাগে।
+# প্রতি ঘণ্টা-ব্লকে দুটি সুযোগ (১৫ ও ৩৫ মিনিট), একটা বাদ গেলেও চলে। ডুপ্লিকেট রান নিরাপদ (লগ পর্ব অনুযায়ী একবারই)।
+# খরচ: প্রতি রানে ~১২ ক্রেডিট (৬ পেয়ার × ২ পেজ), দিনে সর্বোচ্চ ~১৪৪। signals-এর ~২২০ মিলে সীমার (৮০০) ভেতরে।
+
+on:
+  schedule:
+    - cron: "15 0,4,8,12,16,20 * * *"
+    - cron: "35 0,4,8,12,16,20 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: bias
+  cancel-in-progress: false
+
+permissions:
+  contents: write            # data ব্রাঞ্চে কমিটের জন্য
+
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Checkout data branch
+        uses: actions/checkout@v6
+        with:
+          ref: data
+          path: data
+
+      - name: Run bias
+        env:
+          PRICE_API_KEY: ${{ secrets.PRICE_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python -m src.bias.run --once --publish data

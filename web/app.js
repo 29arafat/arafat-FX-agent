@@ -5,7 +5,9 @@
   var C = window.FXCFG;
   var KEY = "fx-cache-v1";
   var S = { signals: [], status: null, fetchedAt: null, error: null, loading: false, period: "all",
-            hist: { pair: "all", res: "all", tf: "all" } };
+            hist: { pair: "all", res: "all", tf: "all" },
+            bias: null, biasStats: null, biasAt: null, biasState: "loading", fundPair: "XAUUSD" };
+  var BKEY = "fx-bias-cache-v1";
 
   // ---------- ছোট সহায়ক ----------
   function h(tag, attrs) {
@@ -106,7 +108,23 @@
       S.signals = res[0]; S.status = res[1]; S.fetchedAt = new Date().toISOString(); saveCache();
     }).catch(function (e) {
       S.error = e && e.message ? e.message : "অজানা ত্রুটি";
-    }).then(function () { S.loading = false; render(); });
+    }).then(function () { S.loading = false; render(); refreshBias(); });
+  }
+  // বায়াস ডেটা আলাদাভাবে আনা হয়: এটা ব্যর্থ হলেও সিগন্যালের অংশ অক্ষত থাকে।
+  function loadBiasCache() {
+    try {
+      var c = JSON.parse(localStorage.getItem(BKEY) || "null");
+      if (c && c.bias && c.bias.pairs) { S.bias = c.bias; S.biasStats = c.stats || null; S.biasAt = c.at; S.biasState = "ok"; }
+    } catch (e) { /* উপেক্ষা */ }
+  }
+  function refreshBias() {
+    return Promise.all([getJSON("bias.json"), getJSON("bias_stats.json").catch(function () { return null; })]).then(function (r) {
+      if (!r[0] || !r[0].pairs) throw new Error("bias.json ফরম্যাট ভুল");
+      S.bias = r[0]; S.biasStats = r[1]; S.biasAt = new Date().toISOString(); S.biasState = "ok";
+      try { localStorage.setItem(BKEY, JSON.stringify({ bias: S.bias, stats: S.biasStats, at: S.biasAt })); } catch (e) { /* ঠিক আছে */ }
+    }).catch(function () {
+      S.biasState = S.bias ? "old" : "none";
+    }).then(function () { if (route().name === "fund") render(); });
   }
 
   // ---------- শেল: উপরের বার, ব্যানার, মেনু ----------
@@ -469,6 +487,105 @@
     return v;
   }
 
+  // ---------- ফান্ডামেন্টালস ট্যাব (মার্কেট বায়াস, শ্যাডো মোড) ----------
+  var HZ = ["h4", "d1", "w1"];
+  var HZN = { h4: "আগামী ৪ ঘণ্টা", d1: "আগামী ২৪ ঘণ্টা (কাল পর্যন্ত)", w1: "আগামী সপ্তাহ" };
+  var BCLS = { UP: "pos", DOWN: "neg", NEUTRAL: "zero" };
+  function safeUrl(u) { return /^https:\/\//.test(String(u || "")) ? String(u) : null; }
+  function biasStale() { return S.bias && (Date.now() - new Date(S.bias.generated_at).getTime()) / 3600000 > 9; }
+
+  function rngBar(pair, hz) {
+    var r = hz.range, lv = hz.levels || {}, ref = Number(hz.ref_price);
+    var vals = [r.lo, r.hi, ref].concat(lv.up != null ? [lv.up] : [], lv.down != null ? [lv.down] : [], hz.target != null ? [hz.target] : []).map(Number);
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), span = hi - lo || 1;
+    function pos(v) { return ((Number(v) - lo) / span * 100).toFixed(1) + "%"; }
+    var kids = [h("div", { class: "rb-range", style: "left:" + pos(r.lo) + ";right:calc(100% - " + pos(r.hi) + ")" })];
+    function tick(cls, v, label) { return h("div", { class: "rb-tick " + cls, style: "left:" + pos(v), title: label + " " + px(pair, v) }); }
+    kids.push(tick("lo", r.lo, "সীমার নিচ"), tick("hi", r.hi, "সীমার ওপর"));
+    if (lv.up != null) kids.push(tick("lvl", lv.up, "রেজিস্ট্যান্স"));
+    if (lv.down != null) kids.push(tick("lvl", lv.down, "সাপোর্ট"));
+    if (hz.target != null) kids.push(tick("tgt", hz.target, "লক্ষ্য"));
+    kids.push(h("div", { class: "rb-now", style: "left:" + pos(ref), title: "বিশ্লেষণের সময়ের দাম " + px(pair, ref) }));
+    return h("div", { class: "rb", role: "img", "aria-label": "দামের সীমা " + px(pair, r.lo) + " থেকে " + px(pair, r.hi) }, kids);
+  }
+
+  function fundStats(pair, key) {
+    var st = S.biasStats, g = st && st.groups && st.groups[pair + "|" + key];
+    var need = (st && st.min_samples) || 100;
+    if (!g || !g.n_resolved) {
+      return h("p", { class: "sub", text: "যাচাই: এখনো কোনো মেয়াদ শেষ হয়নি। ফল জমতে সময় লাগবে (নমুনা " + (g ? g.n_logged : 0) + " লগ হয়েছে)।" });
+    }
+    var txt = "যাচাই: " + g.n_resolved + " টি মেয়াদ শেষ, তার " + g.n_directional + " টিতে দিক বলা হয়েছিল";
+    if (g.hit_rate != null) txt += "; মিলেছে " + Math.round(g.hit_rate * 100) + "%" + (g.base_rate_always_one_side != null ? " (সবসময় একদিকে ধরলে " + Math.round(g.base_rate_always_one_side * 100) + "%)" : "");
+    if (g.range_coverage != null) txt += "; শেষ দাম সীমার ভেতরে ছিল " + Math.round(g.range_coverage * 100) + "%";
+    return h("p", { class: "sub", text: txt + ". সিদ্ধান্তের মতো নমুনা: " + g.n_directional + "/" + need + (g.enough_samples ? "" : " (এখনো যথেষ্ট নয়)") });
+  }
+
+  function fundCard(pair, key, hz) {
+    var kids = [h("div", { class: "fhead" }, h("b", { text: HZN[key] || key }),
+      hz.bias !== "NEUTRAL" ? h("span", { class: "tag conf", text: "আস্থা: " + hz.confidence_bn }) : null)];
+    kids.push(h("div", { class: "fbias " + (BCLS[hz.bias] || "zero"), text: hz.bias_bn }));
+    if (hz.range) {
+      kids.push(rngBar(pair, hz));
+      kids.push(h("dl", { class: "kv fkv" },
+        h("dt", { text: "বিশ্লেষণের সময়ের দাম" }), h("dd", { class: "num", text: px(pair, hz.ref_price) }),
+        h("dt", { text: "উপরে গেলে (সীমা)" }), h("dd", { class: "num pos", text: px(pair, hz.range.hi) + (hz.levels && hz.levels.up != null ? " · রেজিস্ট্যান্স " + px(pair, hz.levels.up) : "") }),
+        h("dt", { text: "নিচে গেলে (সীমা)" }), h("dd", { class: "num neg", text: px(pair, hz.range.lo) + (hz.levels && hz.levels.down != null ? " · সাপোর্ট " + px(pair, hz.levels.down) : "") }),
+        hz.target != null ? h("dt", { text: "বায়াসের দিকে সম্ভাব্য লক্ষ্য" }) : null, hz.target != null ? h("dd", { class: "num", text: px(pair, hz.target) }) : null));
+    }
+    if (hz.reasons_bn && hz.reasons_bn.length) kids.push(h("details", { class: "fdet", open: true }, h("summary", { text: "কারণ (" + hz.reasons_bn.length + ")" }), bullets(hz.reasons_bn)));
+    if (hz.warnings_bn && hz.warnings_bn.length) kids.push(h("details", { class: "fdet", open: true }, h("summary", { text: "সতর্কতা (" + hz.warnings_bn.length + ")" }), bullets(hz.warnings_bn)));
+    kids.push(fundStats(pair, key));
+    return h("section", { class: "fcard" }, kids);
+  }
+
+  function fundEvents(b) {
+    var list = (b.events || []).slice(0, 8);
+    var v = [h("h2", { text: "আসন্ন গুরুত্বপূর্ণ ইভেন্ট (সৌদি সময়)" })];
+    if (!list.length) { v.push(h("p", { class: "sub", text: "আগামী ৭ দিনে তালিকাভুক্ত কোনো গুরুত্বপূর্ণ ইভেন্ট পাওয়া যায়নি (বা সোর্স থেকে আসেনি)।" })); return v; }
+    v.push(h("div", { class: "rows" }, list.map(function (e) {
+      return h("div", { class: "row" }, h("div", { class: "l" }, h("div", { class: "t", text: e.title }), h("div", { class: "s", text: e.currency + (e.approx ? " · আনুমানিক সময়" : "") })),
+        h("div", { class: "r" }, h("div", { class: "t num", text: e.local || "" })));
+    })));
+    return v;
+  }
+
+  function fundNews(b) {
+    var list = (b.news || []).slice(0, 8);
+    var v = [h("h2", { text: "গুরুত্বপূর্ণ খবর (শিরোনাম)" })];
+    if (!list.length) { v.push(h("p", { class: "sub", text: "সাম্প্রতিক কোনো খবর পাওয়া যায়নি।" })); return v; }
+    v.push(h("div", { class: "rows" }, list.map(function (n) {
+      var u = safeUrl(n.link);
+      var body = [h("div", { class: "l" }, h("div", { class: "t ntitle", text: n.title }),
+        h("div", { class: "s", text: n.source + " · " + fmtTime(n.published) + (n.tags && n.tags.length ? " · " + n.tags.join(", ") : "") }))];
+      return u ? h("a", { class: "row", href: u, target: "_blank", rel: "noopener noreferrer" }, body) : h("div", { class: "row" }, body);
+    })));
+    v.push(h("p", { class: "sub", text: "শুধু শিরোনাম ও মূল সোর্সের লিংক। বিষয়বস্তু অনুলিপি করা হয় না।" }));
+    return v;
+  }
+
+  function pageFund() {
+    var v = h("div", null, h("h2", { text: "ফান্ডামেন্টালস" }));
+    if (S.biasState === "loading" && !S.bias) return h("div", { class: "empty" }, h("b", { text: "ডেটা আনা হচ্ছে…" }));
+    if (!S.bias) {
+      return h("div", { class: "empty" }, h("b", { text: "বায়াস এখনো চালু হয়নি" }),
+        "প্রথম রান শেষ হলে এখানে আসবে। GitHub-এ bias workflow চালু ও FRED কী (Secret) বসানো আছে কিনা দেখুন।");
+    }
+    var b = S.bias, ps = Object.keys(b.pairs);
+    if (ps.indexOf(S.fundPair) < 0) S.fundPair = ps[0];
+    add(v, h("p", { class: "sub", text: "বাজারের ঝোঁক ও দামের সম্ভাব্য সীমা। পরীক্ষামূলক (শ্যাডো মোড), হালনাগাদ " + fmtTime(b.generated_at) + " সৌদি (" + ago(b.generated_at) + ")।" }));
+    if (biasStale() || S.biasState === "old") add(v, h("div", { class: "banner" }, biasStale() ? "বায়াস " + ago(b.generated_at) + " হালনাগাদ হয়েছে, পুরনো হতে পারে।" : "নতুন ডেটা আনা যায়নি, সংরক্ষিত বায়াস দেখাচ্ছি।"));
+    if (ps.length > 1) add(v, chips(ps.map(function (p) { return [p, p]; }), S.fundPair, function (x) { S.fundPair = x; render(); }));
+    var pr = b.pairs[S.fundPair];
+    add(v, h("div", { class: "sub fmode", text: S.fundPair + " · " + (pr.mode_bn || "") }));
+    HZ.forEach(function (k) { if (pr.horizons[k]) add(v, fundCard(S.fundPair, k, pr.horizons[k])); });
+    add(v, fundEvents(b));
+    add(v, fundNews(b));
+    if (b.data_notes && b.data_notes.length) add(v, h("details", { class: "fdet", style: "margin-top:18px" }, h("summary", { text: "ডেটা-সোর্সের নোট (" + b.data_notes.length + ")" }), bullets(b.data_notes)));
+    add(v, h("div", { class: "note", text: b.disclaimer_bn || "এটা প্রেক্ষাপট-সূচক, নিশ্চিত ভবিষ্যদ্বাণী নয়।" }));
+    return v;
+  }
+
   // ---------- রাউটার ----------
   function route() {
     var m = (location.hash || "#/dash").replace(/^#\/?/, "").split("/");
@@ -478,8 +595,9 @@
     chrome();
     var r = route(), view = document.getElementById("view"), tab = r.name === "pair" ? "pairs" : r.name;
     var page = r.name === "running" ? pageRunning() : r.name === "pairs" ? pagePairs() : r.name === "pair" ? pagePair(decodeURIComponent(r.arg || ""))
-      : r.name === "history" ? pageHistory() : pageDash();
-    if (!S.fetchedAt && S.loading) page = h("div", { class: "empty" }, h("b", { text: "ডেটা আনা হচ্ছে…" }));
+      : r.name === "history" ? pageHistory() : r.name === "fund" ? pageFund() : pageDash();
+    if (r.name === "fund") { /* বায়াস আলাদা ডেটা, সিগন্যাল ছাড়াও দেখায় */ }
+    else if (!S.fetchedAt && S.loading) page = h("div", { class: "empty" }, h("b", { text: "ডেটা আনা হচ্ছে…" }));
     else if (!S.fetchedAt && S.error) page = h("div", { class: "empty" }, h("b", { text: "ডেটা পাওয়া যায়নি" }), "ইন্টারনেট ঠিক থাকলে 'রিফ্রেশ' চাপুন। নতুন সেটআপে প্রথম রানের পর ডেটা আসে।");
     view.replaceChildren(page);
     document.querySelectorAll("#tabs a").forEach(function (a) {
@@ -506,7 +624,8 @@
     navigator.serviceWorker.register("sw.js").catch(function () { /* SW ছাড়াও অ্যাপ চলে */ });
   }
   loadCache();
+  loadBiasCache();
   render();
   refresh();
-  window.__fx = { summarize: summarize, S: S, partsOf: partsOf };   // টেস্টের জন্য
+  window.__fx = { summarize: summarize, S: S, partsOf: partsOf, safeUrl: safeUrl };   // টেস্টের জন্য
 })();

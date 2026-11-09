@@ -71,4 +71,17 @@ def test_info_popup_wired_safely():
     assert "info-btn" in js and "openInfo" in js and 'role: "dialog"' in js and '"aria-modal": "true"' in js
     assert "Escape" in js and "modal-bg" in css and "body.modal-open" in css
     assert "innerHTML" not in js
-    assert 'VERSION = "fx-v3"' in read("sw.js")        # app.js বদলেছে, তাই ক্যাশ সংস্করণ বেড়েছে
+    assert 'VERSION = "fx-v4"' in read("sw.js")        # app.js বদলেছে, তাই ক্যাশ সংস্করণ বেড়েছে
+
+
+def test_fundamentals_tab_wired_safely():
+    js, html, css = read("app.js"), read("index.html"), read("style.css")
+    assert 'href="#/fund"' in html and "ফান্ডামেন্টালস" in html and 'data-tab="fund"' in html
+    assert "repeat(5, 1fr)" in css and "rb-range" in css and "fcard" in css
+    for k in ("pageFund", "refreshBias", "bias.json", "bias_stats.json", "safeUrl", "noopener"):
+        assert k in js, k
+    assert "innerHTML" not in js
+    assert "^https:" in js.replace("\\/", "/")                          # লিংক শুধু https
+    assert "disclaimer_bn" in js and "শ্যাডো মোড" in js
+    # বায়াস আনা ব্যর্থ হলেও সিগন্যালের অংশ ভাঙে না: আলাদা catch
+    assert re.search(r"function refreshBias\(\).*?\.catch\(", js, re.S)

@@ -387,3 +387,17 @@ def test_main_requires_key_and_does_not_touch_signal_files(monkeypatch, capsys):
     import src.bias.run as run_mod
     src = open(run_mod.__file__, encoding="utf-8").read()
     assert "signals.json" not in src and "state.json" not in src
+
+
+def test_bias_workflow_is_isolated_and_safe():
+    from pathlib import Path
+    wf = (Path(__file__).resolve().parent.parent / ".github" / "workflows" / "bias.yml").read_text(encoding="utf-8")
+    assert "group: bias" in wf and "src.bias.run --once --publish data" in wf
+    assert "secrets.FRED_API_KEY" in wf and "secrets.PRICE_API_KEY" in wf and "TELEGRAM" not in wf
+    crons = re.findall(r'- cron: "([^"]+)"', wf)
+    assert len(crons) == 2
+    sig = (Path(__file__).resolve().parent.parent / ".github" / "workflows" / "signals.yml").read_text(encoding="utf-8")
+    sig_min = {int(m) for m in re.findall(r'- cron: "(\d+) \*', sig)}
+    bias_min = {int(c.split()[0]) for c in crons}
+    assert not (sig_min & bias_min)                          # মিনিট মেলে না, রেট-লিমিটে ধাক্কা নয়
+    assert all(abs(b - s) >= 5 for b in bias_min for s in sig_min)

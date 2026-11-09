@@ -150,7 +150,7 @@ details.hrow summary::-webkit-details-marker { display: none; }
 .kv dt { color: var(--muted); } .kv dd { margin: 0; text-align: right; }
 
 /* নিচের মেনু */
-.tabs { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 560px; margin: 0 auto;
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, 1fr); max-width: 560px; margin: 0 auto;
   background: rgba(19, 35, 42, .96); backdrop-filter: blur(10px); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
 .tabs a { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; color: var(--muted);
   text-decoration: none; font-size: 12px; }
@@ -161,3 +161,24 @@ details.hrow summary::-webkit-details-marker { display: none; }
   font-style: normal; font-size: 12px; font-weight: 700; line-height: 18px; text-align: center; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ফান্ডামেন্টালস ট্যাব */
+.tabs a span { font-size: 11px; white-space: nowrap; }
+.fcard { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 12px; }
+.fhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.fhead b { font-size: 16px; }
+.fbias { font-size: 26px; font-weight: 700; line-height: 1.3; margin: 4px 0 10px; }
+.fmode { margin: 6px 0 12px; }
+.rb { position: relative; height: 22px; margin: 6px 8px 14px; }
+.rb::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: var(--line); }
+.rb-range { position: absolute; top: 7px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, #7a3d38, #4a4a3a 50%, #2f6650); opacity: .85; }
+.rb-tick { position: absolute; top: 3px; width: 2px; height: 16px; margin-left: -1px; background: var(--muted); }
+.rb-tick.lvl { background: var(--brass-dim); height: 12px; top: 5px; }
+.rb-tick.tgt { background: var(--brass); width: 3px; margin-left: -1.5px; }
+.rb-now { position: absolute; top: 4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--text); border: 2px solid var(--ink); }
+.fkv { margin: 4px 0 8px; }
+.fdet { margin-top: 8px; }
+.fdet summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--brass); font-size: 15px; font-weight: 600; }
+.fdet .warn { margin-top: 0; }
+.ntitle { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 380px) { .tabs a span { font-size: 10px; } }
