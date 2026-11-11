@@ -14,7 +14,14 @@
   "lo": 4055.49,
   "hi": 4227.21,
   "R": 85.862,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 4032.73574,
+  "move_r": -1.265,
+  "in_range": false,
+  "breach_up": false,
+  "breach_down": true,
+  "up": false,
+  "correct": null
  },
  {
   "id": "EURUSD|d1|1794262836",
@@ -31,7 +38,14 @@
   "lo": 1.1158,
   "hi": 1.12912,
   "R": 0.006664,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.1165,
+  "move_r": -0.894,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": true,
+  "up": false,
+  "correct": true
  },
  {
   "id": "GBPUSD|d1|1794262836",
@@ -48,7 +62,14 @@
   "lo": 1.33702,
   "hi": 1.35162,
   "R": 0.007304,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.33449,
+  "move_r": -1.346,
+  "in_range": false,
+  "breach_up": false,
+  "breach_down": true,
+  "up": false,
+  "correct": null
  },
  {
   "id": "USDJPY|d1|1794262836",
@@ -65,7 +86,14 @@
   "lo": 156.953,
   "hi": 158.87,
   "R": 0.9588,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 158.76647,
+  "move_r": 0.891,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": true,
+  "correct": null
  },
  {
   "id": "AUDUSD|d1|1794262836",
@@ -82,7 +110,14 @@
   "lo": 0.68745,
   "hi": 0.69785,
   "R": 0.005196,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 0.68662,
+  "move_r": -1.161,
+  "in_range": false,
+  "breach_up": false,
+  "breach_down": true,
+  "up": false,
+  "correct": null
  },
  {
   "id": "USDCAD|d1|1794262836",
@@ -99,7 +134,14 @@
   "lo": 1.4052,
   "hi": 1.4184,
   "R": 0.006599,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.41899,
+  "move_r": 1.09,
+  "in_range": false,
+  "breach_up": true,
+  "breach_down": false,
+  "up": true,
+  "correct": true
  },
  {
   "id": "XAUUSD|h4|1794272847",
@@ -836,7 +878,14 @@
   "lo": 3995.54,
   "hi": 4065.3,
   "R": 34.88,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 4038.26955,
+  "move_r": 0.225,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": true,
+  "correct": false
  },
  {
   "id": "XAUUSD|d1|1794342334",
@@ -870,7 +919,14 @@
   "lo": 1.11426,
   "hi": 1.11924,
   "R": 0.002491,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.11692,
+  "move_r": 0.068,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": true,
+  "correct": false
  },
  {
   "id": "EURUSD|d1|1794342334",
@@ -904,7 +960,14 @@
   "lo": 1.33191,
   "hi": 1.33811,
   "R": 0.003104,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.33485,
+  "move_r": -0.052,
+  "in_range": true,
+  "breach_up": true,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "GBPUSD|d1|1794342334",
@@ -938,7 +1001,14 @@
   "lo": 158.476,
   "hi": 159.088,
   "R": 0.3063,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 158.71572,
+  "move_r": -0.216,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": false
  },
  {
   "id": "USDJPY|d1|1794342334",
@@ -972,7 +1042,14 @@
   "lo": 0.68441,
   "hi": 0.68907,
   "R": 0.002329,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 0.68696,
+  "move_r": 0.094,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": true,
+  "correct": false
  },
  {
   "id": "AUDUSD|d1|1794342334",
@@ -1006,7 +1083,14 @@
   "lo": 1.41511,
   "hi": 1.42095,
   "R": 0.002924,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.41862,
+  "move_r": 0.202,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": true,
+  "correct": true
  },
  {
   "id": "USDCAD|d1|1794342334",
@@ -1023,6 +1107,108 @@
   "lo": 1.41116,
   "hi": 1.4249,
   "R": 0.006873,
+  "status": "Pending"
+ },
+ {
+  "id": "XAUUSD|h4|1794356734",
+  "pair": "XAUUSD",
+  "horizon": "h4",
+  "bucket": "h4:1866",
+  "made_at": "2026-11-11T00:25:34Z",
+  "ref_at": "2026-11-11T00:00:00Z",
+  "expire_at": "2026-11-11T04:00:00Z",
+  "bias": "DOWN",
+  "score": -0.52,
+  "confidence": "MEDIUM",
+  "ref_price": 4038.27,
+  "lo": 4008.82,
+  "hi": 4067.72,
+  "R": 29.446,
+  "status": "Pending"
+ },
+ {
+  "id": "EURUSD|h4|1794356734",
+  "pair": "EURUSD",
+  "horizon": "h4",
+  "bucket": "h4:1866",
+  "made_at": "2026-11-11T00:25:34Z",
+  "ref_at": "2026-11-11T00:00:00Z",
+  "expire_at": "2026-11-11T04:00:00Z",
+  "bias": "DOWN",
+  "score": -0.678,
+  "confidence": "HIGH",
+  "ref_price": 1.11692,
+  "lo": 1.11483,
+  "hi": 1.11901,
+  "R": 0.002095,
+  "status": "Pending"
+ },
+ {
+  "id": "GBPUSD|h4|1794356734",
+  "pair": "GBPUSD",
+  "horizon": "h4",
+  "bucket": "h4:1866",
+  "made_at": "2026-11-11T00:25:34Z",
+  "ref_at": "2026-11-11T00:00:00Z",
+  "expire_at": "2026-11-11T04:00:00Z",
+  "bias": "DOWN",
+  "score": -0.632,
+  "confidence": "MEDIUM",
+  "ref_price": 1.33485,
+  "lo": 1.33142,
+  "hi": 1.33828,
+  "R": 0.003431,
+  "status": "Pending"
+ },
+ {
+  "id": "USDJPY|h4|1794356734",
+  "pair": "USDJPY",
+  "horizon": "h4",
+  "bucket": "h4:1866",
+  "made_at": "2026-11-11T00:25:34Z",
+  "ref_at": "2026-11-11T00:00:00Z",
+  "expire_at": "2026-11-11T04:00:00Z",
+  "bias": "UP",
+  "score": 0.721,
+  "confidence": "HIGH",
+  "ref_price": 158.716,
+  "lo": 158.446,
+  "hi": 158.986,
+  "R": 0.2701,
+  "status": "Pending"
+ },
+ {
+  "id": "AUDUSD|h4|1794356734",
+  "pair": "AUDUSD",
+  "horizon": "h4",
+  "bucket": "h4:1866",
+  "made_at": "2026-11-11T00:25:34Z",
+  "ref_at": "2026-11-11T00:00:00Z",
+  "expire_at": "2026-11-11T04:00:00Z",
+  "bias": "DOWN",
+  "score": -0.581,
+  "confidence": "MEDIUM",
+  "ref_price": 0.68696,
+  "lo": 0.68495,
+  "hi": 0.68897,
+  "R": 0.002015,
+  "status": "Pending"
+ },
+ {
+  "id": "USDCAD|h4|1794356734",
+  "pair": "USDCAD",
+  "horizon": "h4",
+  "bucket": "h4:1866",
+  "made_at": "2026-11-11T00:25:34Z",
+  "ref_at": "2026-11-11T00:00:00Z",
+  "expire_at": "2026-11-11T04:00:00Z",
+  "bias": "UP",
+  "score": 0.916,
+  "confidence": "HIGH",
+  "ref_price": 1.41862,
+  "lo": 1.41585,
+  "hi": 1.42139,
+  "R": 0.002765,
   "status": "Pending"
  }
 ]
