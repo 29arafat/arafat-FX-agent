@@ -37,6 +37,9 @@ def _atomic(path: Path, obj) -> None:
     os.replace(tmp, path)
 
 
+SKIP_CI = "[skip ci]"
+
+
 class DataStore:
     def __init__(self, directory: str | Path):
         self.dir = Path(directory)
@@ -65,6 +68,8 @@ class DataStore:
         self._git("add", "-A")
         if self._git("diff", "--cached", "--quiet", check=False).returncode == 0:
             return True                                       # বদলায়নি
+        if SKIP_CI not in message.lower():
+            message = f"{message} {SKIP_CI}"                  # Cloudflare Pages data ব্রাঞ্চের কমিটে বিল্ড/সারি তৈরি করবে না (অ্যাপ ডেটা GitHub raw থেকে পড়ে)
         self._git("commit", "-q", "-m", message)
         last = ""
         branch = self._git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()

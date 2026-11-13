@@ -374,6 +374,7 @@ def test_datastore_writes_public_files_and_pushes():
         check = Path(tmp) / "check"
         _git(tmp, "clone", "-q", "-b", "data", str(bare), str(check))
         assert (check / "signals.json").exists() and (check / "state.json").exists()
+        assert _git(check, "log", "-1", "--format=%s").strip() == "data: test [skip ci]"       # Cloudflare বিল্ড এড়াতে
         # পরিবর্তন না থাকলে নতুন কমিট নয়
         n1 = _git(clone, "rev-list", "--count", "HEAD").strip()
         assert ds.commit_push("again") is True and _git(clone, "rev-list", "--count", "HEAD").strip() == n1
