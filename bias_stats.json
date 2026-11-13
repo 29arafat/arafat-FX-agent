@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_at": "2026-11-12T22:26:53Z",
+ "generated_at": "2026-11-13T00:25:34Z",
  "min_samples": 100,
  "groups": {
   "AUDUSD|d1": {
@@ -19,18 +19,18 @@
    "enough_samples": false
   },
   "AUDUSD|h4": {
-   "n_logged": 17,
-   "n_resolved": 16,
-   "n_directional": 12,
+   "n_logged": 18,
+   "n_resolved": 17,
+   "n_directional": 13,
    "n_neutral": 4,
-   "hit_rate": 0.583,
+   "hit_rate": 0.538,
    "hit_ci95": [
-    0.32,
-    0.807
+    0.291,
+    0.768
    ],
-   "base_rate_always_one_side": 0.562,
-   "up_rate": 0.438,
-   "range_coverage": 0.875,
+   "base_rate_always_one_side": 0.529,
+   "up_rate": 0.471,
+   "range_coverage": 0.882,
    "enough_samples": false
   },
   "EURUSD|d1": {
@@ -49,18 +49,18 @@
    "enough_samples": false
   },
   "EURUSD|h4": {
-   "n_logged": 17,
-   "n_resolved": 16,
-   "n_directional": 15,
+   "n_logged": 18,
+   "n_resolved": 17,
+   "n_directional": 16,
    "n_neutral": 1,
-   "hit_rate": 0.667,
+   "hit_rate": 0.688,
    "hit_ci95": [
-    0.417,
-    0.848
+    0.444,
+    0.858
    ],
-   "base_rate_always_one_side": 0.625,
-   "up_rate": 0.375,
-   "range_coverage": 0.562,
+   "base_rate_always_one_side": 0.647,
+   "up_rate": 0.353,
+   "range_coverage": 0.588,
    "enough_samples": false
   },
   "GBPUSD|d1": {
@@ -79,18 +79,18 @@
    "enough_samples": false
   },
   "GBPUSD|h4": {
-   "n_logged": 17,
-   "n_resolved": 16,
-   "n_directional": 16,
+   "n_logged": 18,
+   "n_resolved": 17,
+   "n_directional": 17,
    "n_neutral": 0,
-   "hit_rate": 0.688,
+   "hit_rate": 0.706,
    "hit_ci95": [
-    0.444,
-    0.858
+    0.469,
+    0.867
    ],
-   "base_rate_always_one_side": 0.688,
-   "up_rate": 0.312,
-   "range_coverage": 0.812,
+   "base_rate_always_one_side": 0.706,
+   "up_rate": 0.294,
+   "range_coverage": 0.824,
    "enough_samples": false
   },
   "USDCAD|d1": {
@@ -109,18 +109,18 @@
    "enough_samples": false
   },
   "USDCAD|h4": {
-   "n_logged": 17,
-   "n_resolved": 16,
-   "n_directional": 16,
+   "n_logged": 18,
+   "n_resolved": 17,
+   "n_directional": 17,
    "n_neutral": 0,
-   "hit_rate": 0.625,
+   "hit_rate": 0.647,
    "hit_ci95": [
-    0.386,
-    0.815
+    0.413,
+    0.827
    ],
-   "base_rate_always_one_side": 0.625,
-   "up_rate": 0.625,
-   "range_coverage": 0.938,
+   "base_rate_always_one_side": 0.647,
+   "up_rate": 0.647,
+   "range_coverage": 0.941,
    "enough_samples": false
   },
   "USDJPY|d1": {
@@ -139,18 +139,18 @@
    "enough_samples": false
   },
   "USDJPY|h4": {
-   "n_logged": 17,
-   "n_resolved": 16,
-   "n_directional": 12,
+   "n_logged": 18,
+   "n_resolved": 17,
+   "n_directional": 13,
    "n_neutral": 4,
-   "hit_rate": 0.5,
+   "hit_rate": 0.538,
    "hit_ci95": [
-    0.254,
-    0.746
+    0.291,
+    0.768
    ],
-   "base_rate_always_one_side": 0.562,
-   "up_rate": 0.562,
-   "range_coverage": 0.875,
+   "base_rate_always_one_side": 0.588,
+   "up_rate": 0.588,
+   "range_coverage": 0.882,
    "enough_samples": false
   },
   "XAUUSD|d1": {
@@ -169,33 +169,33 @@
    "enough_samples": false
   },
   "XAUUSD|h4": {
-   "n_logged": 17,
-   "n_resolved": 16,
-   "n_directional": 15,
+   "n_logged": 18,
+   "n_resolved": 17,
+   "n_directional": 16,
    "n_neutral": 1,
-   "hit_rate": 0.533,
+   "hit_rate": 0.562,
    "hit_ci95": [
-    0.301,
-    0.752
+    0.332,
+    0.769
    ],
-   "base_rate_always_one_side": 0.625,
-   "up_rate": 0.375,
-   "range_coverage": 0.812,
+   "base_rate_always_one_side": 0.647,
+   "up_rate": 0.353,
+   "range_coverage": 0.824,
    "enough_samples": false
   },
   "ALL|h4": {
-   "n_logged": 102,
-   "n_resolved": 96,
-   "n_directional": 86,
+   "n_logged": 108,
+   "n_resolved": 102,
+   "n_directional": 92,
    "n_neutral": 10,
-   "hit_rate": 0.605,
+   "hit_rate": 0.62,
    "hit_ci95": [
-    0.499,
-    0.701
+    0.517,
+    0.712
    ],
-   "base_rate_always_one_side": 0.552,
-   "up_rate": 0.448,
-   "range_coverage": 0.812,
+   "base_rate_always_one_side": 0.549,
+   "up_rate": 0.451,
+   "range_coverage": 0.824,
    "enough_samples": false
   },
   "ALL|d1": {
