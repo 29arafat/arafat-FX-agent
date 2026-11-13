@@ -28,13 +28,16 @@ def format_open(sig: dict, cfg: dict) -> str:
     off = cfg["notify"]["display_utc_offset_hours"]
     icon = "🟢" if sig["direction"] == "BUY" else "🔴"
     conf = " · ✅ কনফার্মড" if sig.get("confirmed") else ""
+    n = int(sig.get("concurrent") or 0)
+    extra = f"\n⚠ এই {sig['pair']} {sig['timeframe']}-এ আরও {n}টি সিগন্যাল চলমান। মোট ঝুঁকি হিসাব করে নিন।" if n > 0 else ""
     return (
         f"{icon} নতুন সিগন্যাল · {sig['pair']} · {sig['direction']} · {sig['timeframe']}\n"
         f"এন্ট্রি: {fmt_price(sig['entry'], dp)} (বৈধ {fmt_price(sig['entry_valid_until'], dp)} পর্যন্ত)\n"
         f"SL: {fmt_price(sig['sl'], dp)}\n"
         f"TP: {fmt_price(sig['tp'], dp)}\n"
         f"R:R {sig['rr']} · স্কোর {sig['score']}{conf}\n"
-        f"সময়: {fmt_time(sig['opened_at'], off)} (সৌদি)\n"
+        f"সময়: {fmt_time(sig['opened_at'], off)} (সৌদি)"
+        f"{extra}\n"
         f"{sig['id']} · {sig.get('strategy_version', '')}"
     )
 

@@ -82,7 +82,7 @@ risk:
   entry_valid_atr_fraction: 0.25
 
 rules:
-  max_running_per_pair_timeframe: 1
+  max_running_per_pair_timeframe: 3   # একই পেয়ার+টাইমফ্রেমে একসাথে সর্বোচ্চ কতটা Running থাকতে পারবে (২০২৬-১১-১৩ থেকে; আগে ১)। ১ দিলে আগের আচরণ
   cooldown_candles: {H1: 4, H4: 2, D1: 1}   # TP/SL হিটের পর অপেক্ষা (নিজ টাইমফ্রেমের ক্যান্ডেল)
   friday_cutoff_utc: "18:00"  # শুক্রবার এর পর নতুন সিগন্যাল নয়
   tracking_timeframe: H1      # সব সিগন্যাল H1 ক্যান্ডেলে ট্র্যাক হবে

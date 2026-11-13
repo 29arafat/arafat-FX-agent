@@ -60,13 +60,29 @@ def track_running(state: dict, h1, cfg: dict, now_ns: int) -> list[dict]:
     return closed
 
 
-def _blocked(state: dict, pair: str, tf: str, t_ns: int, cfg: dict) -> bool:
+def _running_count(state: dict, pair: str, tf: str, now_ns: int | None = None, cfg: dict | None = None) -> int:
+    """চলমান সিগন্যাল গোনা। যে সিগন্যাল দেরির কারণে ব্যবহারকারীর কাছে পাঠানো হয়নি বা আর পাঠানো হবে না
+    (notified_open == "expired", বা না-পাঠানো অবস্থায় বয়সসীমা পেরিয়েছে) সেটা তার কাছে চলমান নয়,
+    তাই সীমা ও সতর্কবার্তায় গোনা হয় না (পরিসংখ্যানে আগের মতোই ট্র্যাক হয়)।"""
+    n = 0
+    for s in state["signals"]:
+        if s["pair"] != pair or s["timeframe"] != tf or s["status"] != "Running" or s.get("notified_open") == "expired":
+            continue
+        if not s.get("notified_open") and now_ns is not None and cfg is not None:
+            if now_ns - to_ns(s["opened_at"]) > cfg["rules"]["max_signal_age_minutes"][tf] * NS_PER_MIN:
+                continue
+        n += 1
+    return n
+
+
+def _blocked(state: dict, pair: str, tf: str, t_ns: int, cfg: dict, now_ns: int | None = None) -> bool:
+    """Running সংখ্যা সীমায় পৌঁছালে, অথবা সাম্প্রতিক বন্ধ সিগন্যালের কুলডাউনের ভেতরে হলে নতুন সিগন্যাল নয়।"""
+    if _running_count(state, pair, tf, now_ns, cfg) >= cfg["rules"]["max_running_per_pair_timeframe"]:
+        return True
     cool = cooldown_ns(tf, cfg)
     for s in state["signals"]:
         if s["pair"] != pair or s["timeframe"] != tf:
             continue
-        if s["status"] == "Running":
-            return True
         if s["closed_at"] and t_ns < to_ns(s["closed_at"]) + cool:
             return True
     return False
@@ -86,7 +102,7 @@ def new_signals(state: dict, pair: str, frames: dict, cfg: dict, now_ns: int) ->
         for i in idx:
             t = int(trig.end_ns[i])
             key = f"{pair}|{tf}|{t}"
-            if key in keys or friday_blocked(t, cfg["rules"]["friday_cutoff_utc"]) or _blocked(state, pair, tf, t, cfg):
+            if key in keys or friday_blocked(t, cfg["rules"]["friday_cutoff_utc"]) or _blocked(state, pair, tf, t, cfg, now_ns):
                 continue
             sig = evaluate(pair, tf, frames, i, cfg)
             if sig is None:
@@ -109,6 +125,7 @@ def new_signals(state: dict, pair: str, frames: dict, cfg: dict, now_ns: int) ->
                 "parts": {k: bool(v) for k, v in sig.parts.items()},      # কোন শর্ত মিলেছে (অ্যাপের ইনফো পপ-আপে)
                 "risk_atr": round(sig.risk / sig.atr, 2),                 # SL দূরত্ব ÷ ATR (একক-হীন অনুপাত)
                 "strategy_version": cfg["strategy"]["version"],
+                "concurrent": _running_count(state, pair, tf, now_ns, cfg),            # খোলার সময় একই পেয়ার+টাইমফ্রেমে আর কতটা Running ছিল (পরে ভাগ করে বিশ্লেষণের জন্য)
                 "notified_open": False, "notified_close": None,
             }
             state["signals"].append(rec)

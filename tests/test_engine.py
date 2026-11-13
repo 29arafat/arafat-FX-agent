@@ -210,15 +210,15 @@ def test_running_blocks_then_tp_sl_notification_and_cooldown():
         cur = at(int(pd.Timestamp(cur).value) + 3600 * 1_000_000_000)
         E.run_once(CFG, {"XAUUSD": clean(truncate(df, cur), cur)}, {}, st, nt, cur)
         steps += 1
-        # যতক্ষণ Running, একই পেয়ার+টাইমফ্রেমে নতুন H1 সিগন্যাল নয়
-        assert sum(1 for x in st["signals"] if x["timeframe"] == "H1" and x["status"] == "Running") <= 1
+        # Running সংখ্যা কখনো কনফিগের সীমা ছাড়ায় না
+        assert sum(1 for x in st["signals"] if x["timeframe"] == "H1" and x["status"] == "Running") <= CFG["rules"]["max_running_per_pair_timeframe"]
     assert s["status"] in ("TP", "SL") and s["closed_at"] and s["notified_close"] is True
     assert (s["result_r"] < 0) == (s["status"] == "SL")
     assert any(("TP হিট" in m or "SL হিট" in m) for m in nt.sent)
     # বন্ধের পর কুলডাউন: H1 = ৪ ক্যান্ডেল
     cd = E.to_ns(s["closed_at"]) + 4 * 3600 * 1_000_000_000
     for x in st["signals"][1:]:
-        if x["timeframe"] == "H1":
+        if x["timeframe"] == "H1" and E.to_ns(x["opened_at"]) >= E.to_ns(s["closed_at"]):
             assert E.to_ns(x["opened_at"]) >= cd
 
 
@@ -239,7 +239,10 @@ def test_failed_telegram_retried_next_run_and_expires():
     late = at(int(pd.Timestamp(now).value) + 6 * 3600 * 1_000_000_000)
     g2 = Fake()
     E.run_once(CFG, {"XAUUSD": clean(truncate(df, late), late)}, {}, st2, g2, late)
-    assert st2["signals"][0]["notified_open"] == "expired" and not any("নতুন সিগন্যাল" in m for m in g2.sent)
+    stale = st2["signals"][0]
+    assert stale["notified_open"] == "expired" and not any(stale["id"] in m for m in g2.sent)       # পুরনোটা আর যায় না
+    for x in st2["signals"][1:]:                                                                     # নতুন ক্যান্ডেলের আলাদা সিগন্যাল আসতে পারে, কিন্তু পুরনোটাকে 'চলমান' ধরে সতর্কবার্তা নয়
+        assert x["concurrent"] == 0
 
 
 def test_error_alert_deduplicated():
@@ -423,3 +426,46 @@ def test_main_publish_end_to_end_with_patched_fetch():
         check = Path(tmp) / "check"
         _git(tmp, "clone", "-q", "-b", "data", str(bare), str(check))
         assert len(json.loads((check / "signals.json").read_text())) == 1
+
+
+def _sig(status="Running", tf="H1", pair="XAUUSD", closed=None):
+    return {"pair": pair, "timeframe": tf, "status": status, "closed_at": closed}
+
+
+def test_running_cap_is_configurable_and_scoped_to_pair_timeframe():
+    import copy
+    t = 10**18
+    cfg = copy.deepcopy(CFG)
+    st = {"signals": [_sig(), _sig()]}
+    cfg["rules"]["max_running_per_pair_timeframe"] = 1
+    assert E._blocked(st, "XAUUSD", "H1", t, cfg) is True                  # আগের আচরণ
+    cfg["rules"]["max_running_per_pair_timeframe"] = 3
+    assert E._blocked(st, "XAUUSD", "H1", t, cfg) is False                 # ২ চলছে, সীমা ৩
+    st["signals"].append(_sig())
+    assert E._blocked(st, "XAUUSD", "H1", t, cfg) is True                  # ৩ চলছে = সীমা
+    assert E._blocked(st, "XAUUSD", "H4", t, cfg) is False and E._blocked(st, "EURUSD", "H1", t, cfg) is False
+    assert E._running_count(st, "XAUUSD", "H1") == 3
+
+
+def test_cooldown_still_applies_after_a_close():
+    import copy
+    cfg = copy.deepcopy(CFG)
+    cfg["rules"]["max_running_per_pair_timeframe"] = 3
+    closed = "2026-11-02T10:00:00Z"
+    st = {"signals": [_sig("TP", closed=closed), _sig()]}
+    c = E.to_ns(closed)
+    assert E._blocked(st, "XAUUSD", "H1", c + 3 * 3600 * 10**9, cfg) is True      # কুলডাউন ৪ ক্যান্ডেল
+    assert E._blocked(st, "XAUUSD", "H1", c + 4 * 3600 * 10**9, cfg) is False
+
+
+def test_notification_warns_about_concurrent_signals():
+    base = {"pair": "XAUUSD", "direction": "BUY", "timeframe": "H1", "entry": 4100.0, "entry_valid_until": 4102.0, "sl": 4090.0,
+            "tp": 4120.0, "rr": "1:2", "score": 7, "opened_at": "2026-11-13T10:00:00Z", "id": "X1", "strategy_version": "v1-experimental"}
+    assert "চলমান" not in N.format_open({**base, "concurrent": 0}, CFG) and "চলমান" not in N.format_open(base, CFG)
+    m = N.format_open({**base, "concurrent": 2}, CFG)
+    assert "আরও 2টি সিগন্যাল চলমান" in m and "ঝুঁকি" in m
+
+
+def test_expired_unsent_signal_does_not_count_as_running():
+    st = {"signals": [{**_sig(), "notified_open": "expired"}, {**_sig(), "notified_open": True}, {**_sig(), "notified_open": False}]}
+    assert E._running_count(st, "XAUUSD", "H1") == 2
