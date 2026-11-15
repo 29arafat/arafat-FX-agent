@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_at": "2026-11-15T20:25:33Z",
+ "generated_at": "2026-11-15T21:02:23Z",
  "min_samples": 100,
  "groups": {
   "AUDUSD|d1": {
@@ -19,7 +19,7 @@
    "enough_samples": false
   },
   "AUDUSD|h4": {
-   "n_logged": 22,
+   "n_logged": 23,
    "n_resolved": 22,
    "n_directional": 18,
    "n_neutral": 4,
@@ -64,7 +64,7 @@
    "enough_samples": false
   },
   "EURUSD|h4": {
-   "n_logged": 22,
+   "n_logged": 23,
    "n_resolved": 22,
    "n_directional": 21,
    "n_neutral": 1,
@@ -109,7 +109,7 @@
    "enough_samples": false
   },
   "GBPUSD|h4": {
-   "n_logged": 22,
+   "n_logged": 23,
    "n_resolved": 22,
    "n_directional": 22,
    "n_neutral": 0,
@@ -154,7 +154,7 @@
    "enough_samples": false
   },
   "USDCAD|h4": {
-   "n_logged": 22,
+   "n_logged": 23,
    "n_resolved": 22,
    "n_directional": 22,
    "n_neutral": 0,
@@ -199,7 +199,7 @@
    "enough_samples": false
   },
   "USDJPY|h4": {
-   "n_logged": 22,
+   "n_logged": 23,
    "n_resolved": 22,
    "n_directional": 18,
    "n_neutral": 4,
@@ -244,7 +244,7 @@
    "enough_samples": false
   },
   "XAUUSD|h4": {
-   "n_logged": 22,
+   "n_logged": 23,
    "n_resolved": 22,
    "n_directional": 21,
    "n_neutral": 1,
@@ -274,7 +274,7 @@
    "enough_samples": false
   },
   "ALL|h4": {
-   "n_logged": 132,
+   "n_logged": 138,
    "n_resolved": 132,
    "n_directional": 122,
    "n_neutral": 10,
