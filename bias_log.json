@@ -7772,7 +7772,14 @@
   "lo": 3576.93,
   "hi": 3756.81,
   "R": 89.939,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 3520.57004,
+  "move_r": -1.627,
+  "in_range": false,
+  "breach_up": false,
+  "breach_down": true,
+  "up": false,
+  "correct": true
  },
  {
   "id": "EURUSD|h4|1795119940",
@@ -7813,7 +7820,14 @@
   "lo": 1.09097,
   "hi": 1.10383,
   "R": 0.006427,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.09696,
+  "move_r": -0.068,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "GBPUSD|h4|1795119940",
@@ -7854,7 +7868,14 @@
   "lo": 1.30252,
   "hi": 1.31762,
   "R": 0.007549,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.30874,
+  "move_r": -0.176,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "USDJPY|h4|1795119940",
@@ -7895,7 +7916,14 @@
   "lo": 158.894,
   "hi": 160.621,
   "R": 0.8636,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 158.52273,
+  "move_r": -1.43,
+  "in_range": false,
+  "breach_up": false,
+  "breach_down": true,
+  "up": false,
+  "correct": false
  },
  {
   "id": "AUDUSD|h4|1795119940",
@@ -7936,7 +7964,14 @@
   "lo": 0.66113,
   "hi": 0.67163,
   "R": 0.005253,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 0.66199,
+  "move_r": -0.836,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "USDCAD|h4|1795119940",
@@ -7977,7 +8012,14 @@
   "lo": 1.42716,
   "hi": 1.44016,
   "R": 0.006496,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.43319,
+  "move_r": -0.072,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": false
  },
  {
   "id": "XAUUSD|h4|1795134337",
@@ -8570,7 +8612,14 @@
   "lo": 3495.29,
   "hi": 3604.17,
   "R": 54.44,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 3520.57004,
+  "move_r": -0.536,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "EURUSD|h4|1795191936",
@@ -8587,7 +8636,14 @@
   "lo": 1.09559,
   "hi": 1.10097,
   "R": 0.002685,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.09696,
+  "move_r": -0.492,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "GBPUSD|h4|1795191936",
@@ -8604,7 +8660,14 @@
   "lo": 1.30731,
   "hi": 1.31333,
   "R": 0.003009,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.30874,
+  "move_r": -0.525,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "USDJPY|h4|1795191936",
@@ -8621,7 +8684,14 @@
   "lo": 158.286,
   "hi": 159.108,
   "R": 0.4111,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 158.52273,
+  "move_r": -0.424,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": false,
+  "correct": true
  },
  {
   "id": "AUDUSD|h4|1795191936",
@@ -8638,7 +8708,14 @@
   "lo": 0.66202,
   "hi": 0.66714,
   "R": 0.002559,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 0.66199,
+  "move_r": -1.012,
+  "in_range": false,
+  "breach_up": false,
+  "breach_down": true,
+  "up": false,
+  "correct": true
  },
  {
   "id": "USDCAD|h4|1795191936",
@@ -8655,6 +8732,13 @@
   "lo": 1.42927,
   "hi": 1.43469,
   "R": 0.002709,
-  "status": "Pending"
+  "status": "Resolved",
+  "end_price": 1.43319,
+  "move_r": 0.447,
+  "in_range": true,
+  "breach_up": false,
+  "breach_down": false,
+  "up": true,
+  "correct": true
  }
 ]
