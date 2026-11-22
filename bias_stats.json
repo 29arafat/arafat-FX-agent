@@ -1,10 +1,10 @@
 {
  "version": 1,
- "generated_at": "2026-11-22T16:37:13Z",
+ "generated_at": "2026-11-22T20:25:43Z",
  "min_samples": 100,
  "groups": {
   "AUDUSD|d1": {
-   "n_logged": 8,
+   "n_logged": 9,
    "n_resolved": 8,
    "n_directional": 7,
    "n_neutral": 1,
@@ -34,7 +34,7 @@
    "enough_samples": false
   },
   "AUDUSD|w1": {
-   "n_logged": 1,
+   "n_logged": 2,
    "n_resolved": 0,
    "n_directional": 0,
    "n_neutral": 0,
@@ -49,7 +49,7 @@
    "enough_samples": false
   },
   "EURUSD|d1": {
-   "n_logged": 8,
+   "n_logged": 9,
    "n_resolved": 8,
    "n_directional": 8,
    "n_neutral": 0,
@@ -79,7 +79,7 @@
    "enough_samples": false
   },
   "EURUSD|w1": {
-   "n_logged": 1,
+   "n_logged": 2,
    "n_resolved": 0,
    "n_directional": 0,
    "n_neutral": 0,
@@ -94,7 +94,7 @@
    "enough_samples": false
   },
   "GBPUSD|d1": {
-   "n_logged": 8,
+   "n_logged": 9,
    "n_resolved": 8,
    "n_directional": 7,
    "n_neutral": 1,
@@ -124,7 +124,7 @@
    "enough_samples": false
   },
   "GBPUSD|w1": {
-   "n_logged": 1,
+   "n_logged": 2,
    "n_resolved": 0,
    "n_directional": 0,
    "n_neutral": 0,
@@ -139,7 +139,7 @@
    "enough_samples": false
   },
   "USDCAD|d1": {
-   "n_logged": 8,
+   "n_logged": 9,
    "n_resolved": 8,
    "n_directional": 8,
    "n_neutral": 0,
@@ -169,7 +169,7 @@
    "enough_samples": false
   },
   "USDCAD|w1": {
-   "n_logged": 1,
+   "n_logged": 2,
    "n_resolved": 0,
    "n_directional": 0,
    "n_neutral": 0,
@@ -184,7 +184,7 @@
    "enough_samples": false
   },
   "USDJPY|d1": {
-   "n_logged": 8,
+   "n_logged": 9,
    "n_resolved": 8,
    "n_directional": 7,
    "n_neutral": 1,
@@ -214,7 +214,7 @@
    "enough_samples": false
   },
   "USDJPY|w1": {
-   "n_logged": 1,
+   "n_logged": 2,
    "n_resolved": 0,
    "n_directional": 0,
    "n_neutral": 0,
@@ -229,7 +229,7 @@
    "enough_samples": false
   },
   "XAUUSD|d1": {
-   "n_logged": 8,
+   "n_logged": 9,
    "n_resolved": 8,
    "n_directional": 7,
    "n_neutral": 1,
@@ -259,7 +259,7 @@
    "enough_samples": false
   },
   "XAUUSD|w1": {
-   "n_logged": 1,
+   "n_logged": 2,
    "n_resolved": 0,
    "n_directional": 0,
    "n_neutral": 0,
@@ -289,7 +289,7 @@
    "enough_samples": true
   },
   "ALL|d1": {
-   "n_logged": 48,
+   "n_logged": 54,
    "n_resolved": 48,
    "n_directional": 44,
    "n_neutral": 4,
@@ -304,7 +304,7 @@
    "enough_samples": false
   },
   "ALL|w1": {
-   "n_logged": 6,
+   "n_logged": 12,
    "n_resolved": 0,
    "n_directional": 0,
    "n_neutral": 0,
