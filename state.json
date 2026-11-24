@@ -318,7 +318,7 @@
    "strategy_version": "v1-experimental",
    "concurrent": 1,
    "notified_open": true,
-   "notified_close": false
+   "notified_close": true
   },
   {
    "id": "SIG-20261123-04",
