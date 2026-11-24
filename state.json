@@ -240,9 +240,9 @@
    "score": 5,
    "confirmed": false,
    "opened_at": "2026-11-23T16:00:00Z",
-   "status": "Running",
-   "closed_at": null,
-   "result_r": 0,
+   "status": "TP",
+   "closed_at": "2026-11-24T19:00:00Z",
+   "result_r": 3.0,
    "ambiguous": false,
    "entry_valid_until": 3662.67,
    "parts": {
@@ -256,7 +256,7 @@
    "strategy_version": "v1-experimental",
    "concurrent": 0,
    "notified_open": true,
-   "notified_close": null
+   "notified_close": false
   },
   {
    "id": "SIG-20261123-02",
@@ -423,11 +423,11 @@
   "ee4a5230b477": 1794012469061305000,
   "3e2ab40f64d2": 1793973763942633000
  },
- "last_check": "2026-11-24T18:08:28Z",
+ "last_check": "2026-11-24T19:08:22Z",
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-11-24T18:00:00Z",
+   "last_candle": "2026-11-24T19:00:00Z",
    "running_signal": true
   }
  },
