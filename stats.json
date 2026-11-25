@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-11-25T01:08:33Z",
+ "generated_at": "2026-11-25T02:08:09Z",
  "strategy_version": "v1-experimental",
- "running": 6,
+ "running": 7,
  "overall": {
   "trades": 8,
   "wins": 6,
@@ -77,15 +77,15 @@
   }
  },
  "last_7d": {
-  "trades": 3,
-  "wins": 3,
+  "trades": 2,
+  "wins": 2,
   "losses": 0,
   "win_rate": 100.0,
-  "total_r": 8.0,
-  "expectancy": 2.6666666666666665,
+  "total_r": 6.0,
+  "expectancy": 3.0,
   "profit_factor": null,
   "max_drawdown_r": 0.0,
-  "avg_win_r": 2.6666666666666665,
+  "avg_win_r": 3.0,
   "avg_loss_r": 0.0,
   "reliable": false,
   "ambiguous": 0
