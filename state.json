@@ -474,6 +474,37 @@
    "concurrent": 2,
    "notified_open": true,
    "notified_close": null
+  },
+  {
+   "id": "SIG-20261125-03",
+   "key": "XAUUSD|H1|1795600800000000000",
+   "pair": "XAUUSD",
+   "direction": "SELL",
+   "entry": 3529.47,
+   "tp": 3433.44,
+   "sl": 3577.49,
+   "rr": "1:2",
+   "timeframe": "H1",
+   "score": 4,
+   "confirmed": false,
+   "opened_at": "2026-11-25T10:00:00Z",
+   "status": "Running",
+   "closed_at": null,
+   "result_r": 0,
+   "ambiguous": false,
+   "entry_valid_until": 3524.86,
+   "parts": {
+    "clear_trend": true,
+    "pullback_zone": true,
+    "confirmation": false,
+    "no_opposing_level": false,
+    "rsi_state": false
+   },
+   "risk_atr": 2.61,
+   "strategy_version": "v1-experimental",
+   "concurrent": 2,
+   "notified_open": false,
+   "notified_close": null
   }
  ],
  "errors": {
@@ -485,11 +516,11 @@
   "ee4a5230b477": 1794012469061305000,
   "3e2ab40f64d2": 1793973763942633000
  },
- "last_check": "2026-11-25T09:08:35Z",
+ "last_check": "2026-11-25T10:08:33Z",
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-11-25T09:00:00Z",
+   "last_candle": "2026-11-25T10:00:00Z",
    "running_signal": true
   }
  },

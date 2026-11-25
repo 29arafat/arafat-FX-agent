@@ -1,5 +1,32 @@
 [
  {
+  "id": "SIG-20261125-03",
+  "pair": "XAUUSD",
+  "direction": "SELL",
+  "entry": 3529.47,
+  "tp": 3433.44,
+  "sl": 3577.49,
+  "rr": "1:2",
+  "timeframe": "H1",
+  "score": 4,
+  "confirmed": false,
+  "opened_at": "2026-11-25T10:00:00Z",
+  "status": "Running",
+  "closed_at": null,
+  "result_r": 0,
+  "ambiguous": false,
+  "entry_valid_until": 3524.86,
+  "strategy_version": "v1-experimental",
+  "parts": {
+   "clear_trend": true,
+   "pullback_zone": true,
+   "confirmation": false,
+   "no_opposing_level": false,
+   "rsi_state": false
+  },
+  "risk_atr": 2.61
+ },
+ {
   "id": "SIG-20261125-02",
   "pair": "XAUUSD",
   "direction": "SELL",
