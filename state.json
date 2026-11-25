@@ -504,7 +504,7 @@
    "strategy_version": "v1-experimental",
    "concurrent": 2,
    "notified_open": true,
-   "notified_close": false
+   "notified_close": true
   }
  ],
  "errors": {
