@@ -364,9 +364,9 @@
    "score": 6,
    "confirmed": false,
    "opened_at": "2026-11-23T20:00:00Z",
-   "status": "Running",
-   "closed_at": null,
-   "result_r": 0,
+   "status": "TP",
+   "closed_at": "2026-11-25T12:00:00Z",
+   "result_r": 2.0,
    "ambiguous": false,
    "entry_valid_until": 3631.94,
    "parts": {
@@ -380,7 +380,7 @@
    "strategy_version": "v1-experimental",
    "concurrent": 1,
    "notified_open": true,
-   "notified_close": null
+   "notified_close": false
   },
   {
    "id": "SIG-20261124-01",
@@ -395,9 +395,9 @@
    "score": 5,
    "confirmed": false,
    "opened_at": "2026-11-24T00:00:00Z",
-   "status": "Running",
-   "closed_at": null,
-   "result_r": 0,
+   "status": "TP",
+   "closed_at": "2026-11-25T12:00:00Z",
+   "result_r": 2.0,
    "ambiguous": false,
    "entry_valid_until": 3617.91,
    "parts": {
@@ -411,7 +411,7 @@
    "strategy_version": "v1-experimental",
    "concurrent": 2,
    "notified_open": true,
-   "notified_close": null
+   "notified_close": false
   },
   {
    "id": "SIG-20261125-01",
@@ -457,9 +457,9 @@
    "score": 4,
    "confirmed": false,
    "opened_at": "2026-11-25T03:00:00Z",
-   "status": "Running",
-   "closed_at": null,
-   "result_r": 0,
+   "status": "TP",
+   "closed_at": "2026-11-25T12:00:00Z",
+   "result_r": 2.0,
    "ambiguous": false,
    "entry_valid_until": 3548.02,
    "parts": {
@@ -473,7 +473,7 @@
    "strategy_version": "v1-experimental",
    "concurrent": 2,
    "notified_open": true,
-   "notified_close": null
+   "notified_close": false
   },
   {
    "id": "SIG-20261125-03",
@@ -516,11 +516,11 @@
   "ee4a5230b477": 1794012469061305000,
   "3e2ab40f64d2": 1793973763942633000
  },
- "last_check": "2026-11-25T11:08:22Z",
+ "last_check": "2026-11-25T12:08:22Z",
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-11-25T11:00:00Z",
+   "last_candle": "2026-11-25T12:00:00Z",
    "running_signal": true
   }
  },
