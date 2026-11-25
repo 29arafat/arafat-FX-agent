@@ -516,11 +516,11 @@
   "ee4a5230b477": 1794012469061305000,
   "3e2ab40f64d2": 1793973763942633000
  },
- "last_check": "2026-11-25T18:08:25Z",
+ "last_check": "2026-11-25T19:08:33Z",
  "pairs": {
   "XAUUSD": {
    "d1_trend": "SELL",
-   "last_candle": "2026-11-25T18:00:00Z",
+   "last_candle": "2026-11-25T19:00:00Z",
    "running_signal": true
   }
  },
