@@ -689,7 +689,7 @@
    "risk_atr": 1.52,
    "strategy_version": "v1-experimental",
    "concurrent": 1,
-   "notified_open": false,
+   "notified_open": true,
    "notified_close": null
   }
  ],
