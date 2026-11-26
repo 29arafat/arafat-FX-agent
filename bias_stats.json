@@ -1,6 +1,6 @@
 {
  "version": 1,
- "generated_at": "2026-11-26T14:22:42Z",
+ "generated_at": "2026-11-26T16:25:41Z",
  "min_samples": 100,
  "groups": {
   "AUDUSD|d1": {
@@ -19,18 +19,18 @@
    "enough_samples": false
   },
   "AUDUSD|h4": {
-   "n_logged": 74,
-   "n_resolved": 73,
+   "n_logged": 75,
+   "n_resolved": 74,
    "n_directional": 66,
-   "n_neutral": 7,
+   "n_neutral": 8,
    "hit_rate": 0.606,
    "hit_ci95": [
     0.485,
     0.715
    ],
-   "base_rate_always_one_side": 0.616,
-   "up_rate": 0.384,
-   "range_coverage": 0.863,
+   "base_rate_always_one_side": 0.608,
+   "up_rate": 0.392,
+   "range_coverage": 0.865,
    "enough_samples": false
   },
   "AUDUSD|w1": {
@@ -64,18 +64,18 @@
    "enough_samples": false
   },
   "EURUSD|h4": {
-   "n_logged": 74,
-   "n_resolved": 73,
+   "n_logged": 75,
+   "n_resolved": 74,
    "n_directional": 64,
-   "n_neutral": 9,
+   "n_neutral": 10,
    "hit_rate": 0.594,
    "hit_ci95": [
     0.471,
     0.705
    ],
-   "base_rate_always_one_side": 0.616,
-   "up_rate": 0.384,
-   "range_coverage": 0.795,
+   "base_rate_always_one_side": 0.608,
+   "up_rate": 0.392,
+   "range_coverage": 0.797,
    "enough_samples": false
   },
   "EURUSD|w1": {
@@ -109,18 +109,18 @@
    "enough_samples": false
   },
   "GBPUSD|h4": {
-   "n_logged": 74,
-   "n_resolved": 73,
+   "n_logged": 75,
+   "n_resolved": 74,
    "n_directional": 65,
-   "n_neutral": 8,
+   "n_neutral": 9,
    "hit_rate": 0.6,
    "hit_ci95": [
     0.479,
     0.71
    ],
-   "base_rate_always_one_side": 0.616,
-   "up_rate": 0.384,
-   "range_coverage": 0.877,
+   "base_rate_always_one_side": 0.608,
+   "up_rate": 0.392,
+   "range_coverage": 0.878,
    "enough_samples": false
   },
   "GBPUSD|w1": {
@@ -154,18 +154,18 @@
    "enough_samples": false
   },
   "USDCAD|h4": {
-   "n_logged": 74,
-   "n_resolved": 73,
+   "n_logged": 75,
+   "n_resolved": 74,
    "n_directional": 69,
-   "n_neutral": 4,
+   "n_neutral": 5,
    "hit_rate": 0.536,
    "hit_ci95": [
     0.42,
     0.649
    ],
-   "base_rate_always_one_side": 0.589,
-   "up_rate": 0.589,
-   "range_coverage": 0.849,
+   "base_rate_always_one_side": 0.595,
+   "up_rate": 0.595,
+   "range_coverage": 0.851,
    "enough_samples": false
   },
   "USDCAD|w1": {
@@ -199,18 +199,18 @@
    "enough_samples": false
   },
   "USDJPY|h4": {
-   "n_logged": 74,
-   "n_resolved": 73,
+   "n_logged": 75,
+   "n_resolved": 74,
    "n_directional": 34,
-   "n_neutral": 39,
+   "n_neutral": 40,
    "hit_rate": 0.441,
    "hit_ci95": [
     0.289,
     0.605
    ],
-   "base_rate_always_one_side": 0.534,
-   "up_rate": 0.534,
-   "range_coverage": 0.904,
+   "base_rate_always_one_side": 0.541,
+   "up_rate": 0.541,
+   "range_coverage": 0.905,
    "enough_samples": false
   },
   "USDJPY|w1": {
@@ -244,18 +244,18 @@
    "enough_samples": false
   },
   "XAUUSD|h4": {
-   "n_logged": 74,
-   "n_resolved": 73,
-   "n_directional": 70,
+   "n_logged": 75,
+   "n_resolved": 74,
+   "n_directional": 71,
    "n_neutral": 3,
-   "hit_rate": 0.586,
+   "hit_rate": 0.577,
    "hit_ci95": [
-    0.469,
-    0.694
+    0.462,
+    0.685
    ],
-   "base_rate_always_one_side": 0.616,
-   "up_rate": 0.384,
-   "range_coverage": 0.836,
+   "base_rate_always_one_side": 0.608,
+   "up_rate": 0.392,
+   "range_coverage": 0.838,
    "enough_samples": false
   },
   "XAUUSD|w1": {
@@ -274,18 +274,18 @@
    "enough_samples": false
   },
   "ALL|h4": {
-   "n_logged": 444,
-   "n_resolved": 438,
-   "n_directional": 368,
-   "n_neutral": 70,
-   "hit_rate": 0.571,
+   "n_logged": 450,
+   "n_resolved": 444,
+   "n_directional": 369,
+   "n_neutral": 75,
+   "hit_rate": 0.569,
    "hit_ci95": [
-    0.52,
-    0.62
+    0.518,
+    0.619
    ],
-   "base_rate_always_one_side": 0.557,
-   "up_rate": 0.443,
-   "range_coverage": 0.854,
+   "base_rate_always_one_side": 0.55,
+   "up_rate": 0.45,
+   "range_coverage": 0.856,
    "enough_samples": true
   },
   "ALL|d1": {
