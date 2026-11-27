@@ -1,16 +1,16 @@
 {
- "generated_at": "2026-11-27T02:18:18Z",
+ "generated_at": "2026-11-27T03:08:23Z",
  "strategy_version": "v1-experimental",
- "running": 8,
+ "running": 5,
  "overall": {
-  "trades": 17,
+  "trades": 20,
   "wins": 13,
-  "losses": 4,
-  "win_rate": 76.47058823529412,
-  "total_r": 25.0,
-  "expectancy": 1.4705882352941178,
-  "profit_factor": 7.25,
-  "max_drawdown_r": 2.0,
+  "losses": 7,
+  "win_rate": 65.0,
+  "total_r": 22.0,
+  "expectancy": 1.1,
+  "profit_factor": 4.142857142857143,
+  "max_drawdown_r": 5.0,
   "avg_win_r": 2.230769230769231,
   "avg_loss_r": -1.0,
   "reliable": false,
@@ -18,14 +18,14 @@
  },
  "by_pair": {
   "XAUUSD": {
-   "trades": 17,
+   "trades": 20,
    "wins": 13,
-   "losses": 4,
-   "win_rate": 76.47058823529412,
-   "total_r": 25.0,
-   "expectancy": 1.4705882352941178,
-   "profit_factor": 7.25,
-   "max_drawdown_r": 2.0,
+   "losses": 7,
+   "win_rate": 65.0,
+   "total_r": 22.0,
+   "expectancy": 1.1,
+   "profit_factor": 4.142857142857143,
+   "max_drawdown_r": 5.0,
    "avg_win_r": 2.230769230769231,
    "avg_loss_r": -1.0,
    "reliable": false,
@@ -34,14 +34,14 @@
  },
  "by_timeframe": {
   "H1": {
-   "trades": 11,
+   "trades": 14,
    "wins": 8,
-   "losses": 3,
-   "win_rate": 72.72727272727273,
-   "total_r": 16.0,
-   "expectancy": 1.4545454545454546,
-   "profit_factor": 6.333333333333333,
-   "max_drawdown_r": 2.0,
+   "losses": 6,
+   "win_rate": 57.14285714285714,
+   "total_r": 13.0,
+   "expectancy": 0.9285714285714286,
+   "profit_factor": 3.1666666666666665,
+   "max_drawdown_r": 5.0,
    "avg_win_r": 2.375,
    "avg_loss_r": -1.0,
    "reliable": false,
@@ -77,28 +77,28 @@
   }
  },
  "last_7d": {
-  "trades": 11,
+  "trades": 14,
   "wins": 9,
-  "losses": 2,
-  "win_rate": 81.81818181818183,
-  "total_r": 19.0,
-  "expectancy": 1.7272727272727273,
-  "profit_factor": 10.5,
-  "max_drawdown_r": 2.0,
+  "losses": 5,
+  "win_rate": 64.28571428571429,
+  "total_r": 16.0,
+  "expectancy": 1.1428571428571428,
+  "profit_factor": 4.2,
+  "max_drawdown_r": 5.0,
   "avg_win_r": 2.3333333333333335,
   "avg_loss_r": -1.0,
   "reliable": false,
   "ambiguous": 0
  },
  "last_30d": {
-  "trades": 17,
+  "trades": 20,
   "wins": 13,
-  "losses": 4,
-  "win_rate": 76.47058823529412,
-  "total_r": 25.0,
-  "expectancy": 1.4705882352941178,
-  "profit_factor": 7.25,
-  "max_drawdown_r": 2.0,
+  "losses": 7,
+  "win_rate": 65.0,
+  "total_r": 22.0,
+  "expectancy": 1.1,
+  "profit_factor": 4.142857142857143,
+  "max_drawdown_r": 5.0,
   "avg_win_r": 2.230769230769231,
   "avg_loss_r": -1.0,
   "reliable": false,
@@ -172,6 +172,18 @@
   {
    "t": "2026-11-26T03:00:00Z",
    "r": 25.0
+  },
+  {
+   "t": "2026-11-27T03:00:00Z",
+   "r": 24.0
+  },
+  {
+   "t": "2026-11-27T03:00:00Z",
+   "r": 23.0
+  },
+  {
+   "t": "2026-11-27T03:00:00Z",
+   "r": 22.0
   }
  ]
 }
